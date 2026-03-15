@@ -10,14 +10,12 @@ const formatDate = (value: Date) =>
     month: "short",
     day: "numeric",
     weekday: "short",
-    timeZone: "UTC",
   });
 
 const formatTime = (value: Date) =>
   value.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
   });
 
 export default async function DoctorProfilePage({

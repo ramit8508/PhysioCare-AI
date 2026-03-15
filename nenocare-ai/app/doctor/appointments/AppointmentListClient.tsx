@@ -17,7 +17,8 @@ type AppointmentItem = {
   startAt: string;
   endAt: string;
   status: string;
-  roomId: string;
+  roomId?: string | null;
+  meetingUrl?: string | null;
   startAtIso: string;
 };
 
@@ -25,9 +26,11 @@ type Props = {
   items: AppointmentItem[];
   userId: string;
   userName: string;
+  approveAction: (formData: FormData) => void | Promise<void>;
+  declineAction: (formData: FormData) => void | Promise<void>;
 };
 
-export default function AppointmentListClient({ items, userId, userName }: Props) {
+export default function AppointmentListClient({ items, userId, userName, approveAction, declineAction }: Props) {
   const [activeRoom, setActiveRoom] = useState<string | null>(null);
   const [now, setNow] = useState<Date>(new Date());
   const notifiedRef = useRef<Set<string>>(new Set());
@@ -115,9 +118,41 @@ export default function AppointmentListClient({ items, userId, userName }: Props
                 </p>
               );
             })()}
-            <Button type="button" onClick={() => setActiveRoom(appointment.roomId)}>
-              Start Telehealth
-            </Button>
+            {appointment.status === "PENDING" ? (
+              <div className="flex items-center gap-2">
+                <form action={approveAction}>
+                  <input type="hidden" name="appointmentId" value={appointment.id} />
+                  <Button type="submit">Approve</Button>
+                </form>
+                <form action={declineAction}>
+                  <input type="hidden" name="appointmentId" value={appointment.id} />
+                  <Button type="submit" variant="outline">
+                    Decline
+                  </Button>
+                </form>
+              </div>
+            ) : appointment.status === "APPROVED" && appointment.meetingUrl ? (
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <a
+                  href={appointment.meetingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: "12px",
+                    color: "#6366f1",
+                    textDecoration: "underline",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  🔗 Share Link
+                </a>
+                <Button type="button" onClick={() => setActiveRoom(appointment.roomId!)} style={{ fontSize: "12px" }}>
+                  Join Call
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">Not available</p>
+            )}
           </CardContent>
         </Card>
       ))}

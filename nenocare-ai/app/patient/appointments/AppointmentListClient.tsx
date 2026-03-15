@@ -17,7 +17,8 @@ type AppointmentItem = {
   startAt: string;
   endAt: string;
   status: string;
-  roomId: string;
+  roomId?: string | null;
+  meetingUrl?: string | null;
   startAtIso: string;
 };
 
@@ -115,9 +116,30 @@ export default function AppointmentListClient({ items, userId, userName }: Props
                 </p>
               );
             })()}
-            <Button type="button" onClick={() => setActiveRoom(appointment.roomId)}>
-              Start Telehealth
-            </Button>
+            {appointment.status === "APPROVED" && appointment.meetingUrl ? (
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <a
+                  href={appointment.meetingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: "12px",
+                    color: "#6366f1",
+                    textDecoration: "underline",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  📨 Meeting Link
+                </a>
+                <Button type="button" onClick={() => setActiveRoom(appointment.roomId!)} style={{ fontSize: "12px" }}>
+                  Join Call
+                </Button>
+              </div>
+            ) : appointment.status === "PENDING" ? (
+              <p className="text-xs text-slate-400">Waiting for doctor approval</p>
+            ) : (
+              <p className="text-xs text-slate-400">Not available</p>
+            )}
           </CardContent>
         </Card>
       ))}

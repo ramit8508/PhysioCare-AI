@@ -19,7 +19,8 @@ enum SlotStatus {
 }
 
 enum AppointmentStatus {
-  SCHEDULED
+  PENDING
+  APPROVED
   COMPLETED
   CANCELED
 }
@@ -114,9 +115,9 @@ model Appointment {
   doctorId   String             @db.ObjectId
   patientId  String             @db.ObjectId
   slotId     String             @unique @db.ObjectId
-  roomId     String
-  meetingUrl String
-  status     AppointmentStatus  @default(SCHEDULED)
+  roomId     String?
+  meetingUrl String?
+  status     AppointmentStatus  @default(PENDING)
   createdAt  DateTime           @default(now())
 
   doctor   User       @relation("DoctorAppointments", fields: [doctorId], references: [id])

@@ -72,7 +72,6 @@ export default async function PatientDashboard() {
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      timeZone: "UTC",
     });
 
   return (

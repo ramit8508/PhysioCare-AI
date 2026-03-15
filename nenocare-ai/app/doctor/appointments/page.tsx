@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AppointmentListClient from "./AppointmentListClient";
 import { Calendar } from "lucide-react";
+import { approveAppointment, declineAppointment } from "./actions";
 
 const formatDateTime = (value: Date) =>
   value.toLocaleString("en-US", {
@@ -32,11 +33,15 @@ export default async function DoctorAppointmentsPage() {
     endAt: formatDateTime(appointment.slot.endAt),
     status: appointment.status,
     roomId: appointment.roomId,
+    meetingUrl: appointment.meetingUrl,
     startAtIso: new Date(appointment.slot.startAt).toISOString(),
   }));
 
   const upcomingCount = items.filter(
-    (item) => item.status === "SCHEDULED"
+    (item) => item.status === "APPROVED"
+  ).length;
+  const pendingCount = items.filter(
+    (item) => item.status === "PENDING"
   ).length;
   const completedCount = items.filter(
     (item) => item.status === "COMPLETED"
@@ -72,6 +77,17 @@ export default async function DoctorAppointmentsPage() {
               <p className="doctor-stat-value">{completedCount}</p>
             </div>
           </div>
+          <div className="doctor-stat-card">
+            <div className="doctor-stat-icon" style={{ background: "#ffedd5" }}>
+              <span style={{ width: "20px", height: "20px", color: "#ea580c", fontSize: "14px" }}>
+                ⏳
+              </span>
+            </div>
+            <div>
+              <p className="doctor-stat-label">Pending</p>
+              <p className="doctor-stat-value">{pendingCount}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -81,7 +97,13 @@ export default async function DoctorAppointmentsPage() {
             <p className="doctor-empty-message">No appointments booked yet.</p>
           </div>
         ) : (
-          <AppointmentListClient items={items} userId={session.userId} userName="Doctor" />
+          <AppointmentListClient
+            items={items}
+            userId={session.userId}
+            userName="Doctor"
+            approveAction={approveAppointment}
+            declineAction={declineAppointment}
+          />
         )}
       </div>
     </main>

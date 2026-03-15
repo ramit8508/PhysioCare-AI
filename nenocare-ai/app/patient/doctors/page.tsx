@@ -11,7 +11,6 @@ const formatDateTime = (value: Date) =>
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
   });
 
 export default async function PatientDoctorsPage() {

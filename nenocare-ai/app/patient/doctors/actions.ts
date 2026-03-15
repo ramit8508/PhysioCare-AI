@@ -30,10 +30,6 @@ export async function bookSlot(formData: FormData) {
     throw new Error("Slot unavailable");
   }
 
-  const roomId = randomBytes(10).toString("hex");
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const meetingUrl = `${baseUrl}/meet/${roomId}`;
-
   await prismaAny.doctorSlot.update({
     where: { id: slot.id },
     data: { status: "BOOKED" },
@@ -44,11 +40,11 @@ export async function bookSlot(formData: FormData) {
       doctorId: slot.doctorId,
       patientId: session.userId,
       slotId: slot.id,
-      roomId,
-      meetingUrl,
+      status: "PENDING",
     },
   });
 
   revalidatePath("/patient/doctors");
   revalidatePath("/patient/appointments");
+  revalidatePath("/doctor/appointments");
 }

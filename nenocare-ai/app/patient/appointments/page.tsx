@@ -42,16 +42,19 @@ export default async function PatientAppointmentsPage() {
     endAt: formatDateTime(appointment.slot.endAt),
     status: appointment.status,
     roomId: appointment.roomId,
+    meetingUrl: appointment.meetingUrl,
     startAtIso: new Date(appointment.slot.startAt).toISOString(),
   }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "SCHEDULED":
+      case "APPROVED":
         return { bg: "#dbeafe", color: "#0284c7" };
+      case "PENDING":
+        return { bg: "#fef3c7", color: "#d97706" };
       case "COMPLETED":
         return { bg: "#dcfce7", color: "#16a34a" };
-      case "CANCELLED":
+      case "CANCELED":
         return { bg: "#fee2e2", color: "#dc2626" };
       default:
         return { bg: "#fef3c7", color: "#d97706" };
