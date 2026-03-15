@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, Users } from "lucide-react";
 
 type PatientOption = {
   id: string;
@@ -72,87 +71,106 @@ export default function ExerciseLibrary({ patients, createPrescription }: Props)
   };
 
   return (
-    <section className="mt-6">
-      <Card className="glass card-lift">
-        <CardHeader>
-          <CardTitle>Prescribe Exercises</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-[1.4fr_1fr_auto]">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search exercises"
-            className="h-10 rounded-md border border-white/10 bg-white/5 px-3 text-sm"
-          />
-          <select
-            value={selectedPatient}
-            onChange={(event) => setSelectedPatient(event.target.value)}
-            className="h-10 rounded-md border border-white/10 bg-white/5 px-3 text-sm"
-          >
-            <option value="">Select patient</option>
-            {patients.map((patient) => (
-              <option key={patient.id} value={patient.id}>
-                {patient.label}
-              </option>
-            ))}
-          </select>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canPrescribe}
-          >
-            Prescribe Selected
-          </Button>
-        </CardContent>
-      </Card>
-
-      {loading ? (
-        <p className="mt-6 text-sm text-mutedForeground">Loading exercises...</p>
-      ) : (
-        <motion.div
-          className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-          variants={{
-            hidden: { opacity: 0 },
-            show: {
-              opacity: 1,
-              transition: { staggerChildren: 0.08 },
-            },
-          }}
-          initial="hidden"
-          animate="show"
-        >
-          {items.map((exercise) => (
-            <motion.button
-              key={exercise.id}
-              type="button"
-              onClick={() => setSelectedExercise(exercise)}
-              variants={{
-                hidden: { opacity: 0, y: 12 },
-                show: { opacity: 1, y: 0 },
-              }}
-              className={`card-lift rounded-xl border px-4 py-4 text-left transition ${
-                selectedExercise?.id === exercise.id
-                  ? "border-sky-400/60 bg-sky-500/10"
-                  : "border-white/10 bg-white/5"
-              }`}
-            >
-              <p className="text-base font-semibold capitalize">
-                {exercise.name}
-              </p>
-              <p className="mt-1 text-xs text-mutedForeground">
-                {exercise.bodyPart} · {exercise.target}
-              </p>
-              {exercise.gifUrl ? (
-                <img
-                  src={exercise.gifUrl}
-                  alt={exercise.name}
-                  className="mt-3 w-full rounded-lg"
+    <section className="doctor-exercise-section">
+      <div className="doctor-exercise-card">
+        <div className="doctor-exercise-header">
+          <h2 className="doctor-exercise-title">Prescribe Exercises</h2>
+        </div>
+        <form onSubmit={handleSubmit} className="doctor-exercise-form">
+          <div className="doctor-exercise-inputs">
+            <div className="doctor-exercise-input-group">
+              <label className="doctor-exercise-label">Search Exercise</label>
+              <div className="doctor-exercise-input-wrapper">
+                <Search className="doctor-exercise-input-icon" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search by name, body part, or target..."
+                  className="doctor-exercise-input"
                 />
-              ) : null}
-            </motion.button>
-          ))}
-        </motion.div>
-      )}
+              </div>
+            </div>
+
+            <div className="doctor-exercise-input-group">
+              <label className="doctor-exercise-label">Select Patient</label>
+              <div className="doctor-exercise-input-wrapper">
+                <Users className="doctor-exercise-input-icon" />
+                <select
+                  value={selectedPatient}
+                  onChange={(event) => setSelectedPatient(event.target.value)}
+                  className="doctor-exercise-select"
+                >
+                  <option value="">Choose a patient...</option>
+                  {patients.map((patient) => (
+                    <option key={patient.id} value={patient.id}>
+                      {patient.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!canPrescribe}
+            className={`doctor-exercise-btn-submit ${!canPrescribe ? "disabled" : ""}`}
+          >
+            {canPrescribe ? "Prescribe Selected" : "Select Exercise & Patient"}
+          </button>
+        </form>
+      </div>
+
+      <div className="doctor-exercise-list">
+        {loading ? (
+          <p className="doctor-exercise-loading">Loading exercises...</p>
+        ) : items.length === 0 ? (
+          <p className="doctor-exercise-empty">No exercises found. Try a different search.</p>
+        ) : (
+          <motion.div
+            className="doctor-exercise-grid"
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: 0.08 },
+              },
+            }}
+            initial="hidden"
+            animate="show"
+          >
+            {items.map((exercise) => (
+              <motion.button
+                key={exercise.id}
+                type="button"
+                onClick={() => setSelectedExercise(exercise)}
+                variants={{
+                  hidden: { opacity: 0, y: 12 },
+                  show: { opacity: 1, y: 0 },
+                }}
+                className={`doctor-exercise-item ${
+                  selectedExercise?.id === exercise.id ? "selected" : ""
+                }`}
+              >
+                <div className="doctor-exercise-item-header">
+                  <p className="doctor-exercise-item-name">{exercise.name}</p>
+                  <span className="doctor-exercise-item-meta">
+                    {exercise.bodyPart} · {exercise.target}
+                  </span>
+                </div>
+                {exercise.gifUrl && (
+                  <img
+                    src={exercise.gifUrl}
+                    alt={exercise.name}
+                    className="doctor-exercise-item-image"
+                  />
+                )}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </div>
     </section>
   );
 }
+

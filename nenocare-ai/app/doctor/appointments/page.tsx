@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AppointmentListClient from "./AppointmentListClient";
+import { Calendar } from "lucide-react";
 
 const formatDateTime = (value: Date) =>
   value.toLocaleString("en-US", {
@@ -34,24 +35,55 @@ export default async function DoctorAppointmentsPage() {
     startAtIso: new Date(appointment.slot.startAt).toISOString(),
   }));
 
+  const upcomingCount = items.filter(
+    (item) => item.status === "SCHEDULED"
+  ).length;
+  const completedCount = items.filter(
+    (item) => item.status === "COMPLETED"
+  ).length;
+
   return (
-    <main className="px-6 py-8">
-      <div className="max-w-5xl">
-        <h1 className="text-3xl font-semibold">Upcoming Appointments</h1>
-        <p className="mt-2 text-sm text-mutedForeground">
-          Join sessions and review patient needs before the call.
-        </p>
+    <main className="doctor-shell">
+      <div className="doctor-header">
+        <div>
+          <h1 className="doctor-title">Upcoming Appointments</h1>
+          <p className="doctor-subtitle">
+            Join sessions and review patient needs before the call.
+          </p>
+        </div>
+        <div className="doctor-stats">
+          <div className="doctor-stat-card">
+            <div className="doctor-stat-icon" style={{ background: "#fef3c7" }}>
+              <Calendar style={{ width: "20px", height: "20px", color: "#d97706" }} />
+            </div>
+            <div>
+              <p className="doctor-stat-label">Upcoming Sessions</p>
+              <p className="doctor-stat-value">{upcomingCount}</p>
+            </div>
+          </div>
+          <div className="doctor-stat-card">
+            <div className="doctor-stat-icon" style={{ background: "#d1fae5" }}>
+              <span style={{ width: "20px", height: "20px", color: "#059669", fontSize: "14px" }}>
+                ✓
+              </span>
+            </div>
+            <div>
+              <p className="doctor-stat-label">Completed</p>
+              <p className="doctor-stat-value">{completedCount}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {items.length === 0 ? (
-        <p className="mt-6 text-sm text-mutedForeground">No appointments booked yet.</p>
-      ) : (
-        <AppointmentListClient
-          items={items}
-          userId={session.userId}
-          userName="Doctor"
-        />
-      )}
+      <div className="doctor-content">
+        {items.length === 0 ? (
+          <div className="doctor-empty-state">
+            <p className="doctor-empty-message">No appointments booked yet.</p>
+          </div>
+        ) : (
+          <AppointmentListClient items={items} userId={session.userId} userName="Doctor" />
+        )}
+      </div>
     </main>
   );
 }

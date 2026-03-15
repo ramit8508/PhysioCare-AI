@@ -39,15 +39,15 @@ export default async function DoctorReviewPage() {
   }));
 
   return (
-    <main className="px-6 py-8">
-      <div className="max-w-5xl">
-        <h1 className="text-3xl font-semibold">Patient Reviews</h1>
-        <p className="mt-2 text-sm text-mutedForeground">
+    <main className="page-shell">
+      <div>
+        <h1 className="page-title">Patient Reviews</h1>
+        <p className="page-subtitle">
           Review recordings alongside Groq clinical analysis.
         </p>
       </div>
       {reviewRecords.length === 0 ? (
-        <p className="mt-6 text-sm text-mutedForeground">No reports yet.</p>
+        <p className="mt-6 text-sm text-slate-500">No reports yet.</p>
       ) : (
         <DoctorReviewClient patients={patientOptions} records={reviewRecords} />
       )}

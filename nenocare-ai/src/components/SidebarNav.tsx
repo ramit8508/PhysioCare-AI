@@ -2,12 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import { signOut } from "next-auth/react";
+import {
+  Activity,
+  CalendarClock,
+  ClipboardCheck,
+  HeartPulse,
+  LayoutDashboard,
+  LogOut,
+  ShieldCheck,
+  Stethoscope,
+} from "lucide-react";
+
+const iconMap = {
+  activity: Activity,
+  calendar: CalendarClock,
+  clipboard: ClipboardCheck,
+  heart: HeartPulse,
+  dashboard: LayoutDashboard,
+  shield: ShieldCheck,
+  stethoscope: Stethoscope,
+};
+
+export type IconName = keyof typeof iconMap;
 
 type NavItem = {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: IconName;
 };
 
 type Props = {
@@ -20,31 +42,43 @@ export default function SidebarNav({ title, subtitle, items }: Props) {
   const pathname = usePathname();
 
   return (
-    <aside className="glass flex h-full w-64 flex-col gap-6 p-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-sky-300">{subtitle}</p>
-        <h2 className="mt-2 text-xl font-semibold">{title}</h2>
+    <aside className="sidebar-nav-container">
+      <div className="sidebar-nav-header">
+        <div className="sidebar-nav-branding">
+          <p className="sidebar-nav-subtitle">{subtitle}</p>
+          <h2 className="sidebar-nav-title">{title}</h2>
+        </div>
       </div>
-      <nav className="flex flex-col gap-2">
+
+      <nav className="sidebar-nav-menu">
         {items.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
-          const Icon = item.icon;
+          const Icon = iconMap[item.icon];
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                active ? "bg-sky-500/15 text-sky-200" : "text-mutedForeground hover:bg-white/5"
-              }`}
+              className={`sidebar-nav-item ${active ? "active" : ""}`}
             >
-              <Icon className="h-4 w-4" />
-              {item.label}
+              <Icon className="sidebar-nav-item-icon" />
+              <span className="sidebar-nav-item-label">{item.label}</span>
+              {active && <div className="sidebar-nav-item-indicator" />}
             </Link>
           );
         })}
       </nav>
-      <div className="mt-auto text-xs text-mutedForeground">
-        NeroCare AI · Modern Clinical
+
+      <div className="sidebar-nav-footer">
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="sidebar-nav-logout"
+        >
+          <LogOut className="sidebar-nav-logout-icon" />
+          <span>Logout</span>
+        </button>
+        <div className="sidebar-nav-copyright">
+          NeroCare AI · Modern Clinical
+        </div>
       </div>
     </aside>
   );

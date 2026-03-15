@@ -264,14 +264,14 @@ export default function ExerciseSession({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm">
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-              <p className="text-xs text-mutedForeground">Performance</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">Performance</p>
               <p className="text-base font-semibold">
                 {repCount} reps · {Math.round(maxAngle)}° max · {Math.round(totalFrames > 0 ? (goodFrames / totalFrames) * 100 : 0)}% accuracy
               </p>
             </div>
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-              <p className="text-xs text-mutedForeground">Groq Summary</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">Groq Summary</p>
               <p className="mt-2 whitespace-pre-wrap">
                 {reportText || "Report is being finalized."}
               </p>
@@ -286,7 +286,7 @@ export default function ExerciseSession({
             <img
               src={exerciseGif}
               alt={exerciseName}
-              className="mt-3 w-full max-w-sm rounded-xl border border-white/10"
+              className="mt-3 w-full max-w-sm rounded-xl border border-slate-200"
             />
           ) : null}
         </div>
@@ -295,7 +295,7 @@ export default function ExerciseSession({
           <div className="relative">
             <video ref={videoRef} className="hidden" playsInline muted />
             <div
-              className={`relative overflow-hidden rounded-xl border border-white/10 ${
+              className={`relative overflow-hidden rounded-xl border border-slate-200 ${
                 glow ? "animate-pulseGlow" : ""
               }`}
             >
@@ -331,7 +331,7 @@ export default function ExerciseSession({
               >
                 {repCount} reps
               </motion.div>
-              <p className="text-xs text-mutedForeground">
+              <p className="text-xs text-slate-500">
                 Goal: {goalReps} · Target {angleText}
               </p>
             </div>

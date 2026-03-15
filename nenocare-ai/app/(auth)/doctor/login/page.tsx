@@ -1,7 +1,7 @@
+import RoleLoginForm from "@/components/RoleLoginForm";
 import Link from "next/link";
-import PatientAuthTabs from "./PatientAuthTabs";
 
-export default function PatientLoginPage() {
+export default function DoctorLoginPage() {
   return (
     <main className="auth-shell">
       <nav className="auth-nav">
@@ -14,14 +14,14 @@ export default function PatientLoginPage() {
       <div className="auth-card">
         <div className="auth-card-header">
           <p className="auth-card-header-logo">NEROCARE</p>
-          <h1 className="auth-card-header-title">Patient Access</h1>
-          <p className="auth-card-header-desc">Login or create a new patient account.</p>
+          <h1 className="auth-card-header-title">Doctor Login</h1>
+          <p className="auth-card-header-desc">Access appointments and exercise plans.</p>
         </div>
         <div className="auth-card-content">
-          <PatientAuthTabs />
+          <RoleLoginForm role="DOCTOR" callbackUrl="/doctor/exercises" />
         </div>
         <div className="auth-footer">
-          Doctor or Admin? <Link href="/doctor/login">Doctor login</Link> ·{" "}
+          Patient? <Link href="/login">Patient login</Link> ·{" "}
           <Link href="/admin/login">Admin login</Link>
         </div>
       </div>

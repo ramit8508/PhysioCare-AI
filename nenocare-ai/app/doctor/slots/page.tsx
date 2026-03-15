@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { Clock, Calendar } from "lucide-react";
+import SlotForm from "./SlotForm";
 import { createSlot } from "./actions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 const formatDateTime = (value: Date) =>
   value.toLocaleString("en-US", {
@@ -11,6 +11,7 @@ const formatDateTime = (value: Date) =>
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   });
 
 const formatDate = (value: Date) =>
@@ -18,12 +19,14 @@ const formatDate = (value: Date) =>
     month: "short",
     day: "numeric",
     weekday: "short",
+    timeZone: "UTC",
   });
 
 const formatTime = (value: Date) =>
   value.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   });
 
 export default async function DoctorSlotsPage() {
@@ -46,119 +49,123 @@ export default async function DoctorSlotsPage() {
     return date;
   });
 
+  const availableSlots = slots.filter((s: any) => s.status === "AVAILABLE").length;
+  const bookedSlots = slots.filter((s: any) => s.status === "BOOKED").length;
+
   return (
-    <main className="px-6 py-8">
-      <div className="max-w-4xl">
-        <h1 className="text-3xl font-semibold">Manage Timeslots</h1>
-        <p className="mt-2 text-sm text-mutedForeground">
-          Add your available consultation slots for patients to book.
-        </p>
+    <main className="doctor-shell">
+      <div className="doctor-header">
+        <div>
+          <h1 className="doctor-title">Manage Timeslots</h1>
+          <p className="doctor-subtitle">
+            Add your available consultation slots for patients to book.
+          </p>
+        </div>
+        <div className="doctor-stats">
+          <div className="doctor-stat-card">
+            <div className="doctor-stat-icon" style={{ background: "#c7d2fe" }}>
+              <Clock style={{ width: "20px", height: "20px", color: "#4f46e5" }} />
+            </div>
+            <div>
+              <p className="doctor-stat-label">Available Slots</p>
+              <p className="doctor-stat-value">{availableSlots}</p>
+            </div>
+          </div>
+          <div className="doctor-stat-card">
+            <div className="doctor-stat-icon" style={{ background: "#fed7aa" }}>
+              <Calendar style={{ width: "20px", height: "20px", color: "#b45309" }} />
+            </div>
+            <div>
+              <p className="doctor-stat-label">Booked</p>
+              <p className="doctor-stat-value">{bookedSlots}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <Card className="glass mt-6 max-w-3xl">
-        <CardHeader>
-          <CardTitle>Create new slot</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={createSlot} className="grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm">
-              Start time
-              <input
-                type="datetime-local"
-                name="startAt"
-                required
-                className="h-11 rounded-md border border-white/10 bg-white/5 px-3"
-              />
-            </label>
-            <label className="grid gap-2 text-sm">
-              End time
-              <input
-                type="datetime-local"
-                name="endAt"
-                required
-                className="h-11 rounded-md border border-white/10 bg-white/5 px-3"
-              />
-            </label>
-            <div className="md:col-span-2">
-              <Button type="submit">Add slot</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <section className="mt-8">
-        <h2 className="text-xl font-semibold">Weekly Calendar</h2>
-        <p className="mt-2 text-sm text-mutedForeground">
-          A quick look at your next 7 days.
-        </p>
-
-        {slots.length === 0 ? (
-          <p className="mt-4 text-sm text-mutedForeground">No slots yet.</p>
-        ) : (
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {days.map((day) => {
-              const dayLabel = formatDate(day);
-              const daySlots = slots.filter((slot: any) => {
-                const slotDate = new Date(slot.startAt);
-                return (
-                  slotDate.getFullYear() === day.getFullYear() &&
-                  slotDate.getMonth() === day.getMonth() &&
-                  slotDate.getDate() === day.getDate()
-                );
-              });
-
-              return (
-                <Card key={day.toISOString()} className="glass">
-                  <CardHeader>
-                    <CardTitle>{dayLabel}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid gap-3">
-                    {daySlots.length === 0 ? (
-                      <p className="text-xs text-mutedForeground">No slots</p>
-                    ) : (
-                      daySlots.map((slot: any) => (
-                        <div
-                          key={slot.id}
-                          className="card-lift flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-4"
-                        >
-                          <div className="text-sm font-semibold">
-                            {formatTime(slot.startAt)} - {formatTime(slot.endAt)}
-                          </div>
-                          <p className="text-xs text-mutedForeground">{slot.status}</p>
-                          <p className="text-xs text-emerald-300">
-                            {slot.status === "AVAILABLE" ? "Open for booking" : "Booked"}
-                          </p>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+      <div className="doctor-content">
+        <section className="doctor-card">
+          <div className="doctor-section-header">
+            <h2 className="doctor-section-heading">
+              <Clock style={{ width: "20px", height: "20px" }} />
+              Create New Slot
+            </h2>
           </div>
-        )}
-      </section>
+          <SlotForm action={createSlot} />
+        </section>
 
-      <section className="mt-8 grid gap-4">
-        <h2 className="text-xl font-semibold">All Timeslots</h2>
-        {slots.length === 0 ? (
-          <p className="text-sm text-mutedForeground">No slots yet.</p>
-        ) : (
-          slots.map((slot: any) => (
-            <Card key={slot.id} className="glass">
-              <CardContent className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-sm text-mutedForeground">{formatDateTime(slot.startAt)} - {formatDateTime(slot.endAt)}</p>
-                  <p className="text-xs text-mutedForeground">Status: {slot.status}</p>
+        <section className="doctor-card">
+          <div className="doctor-section-header">
+            <h2 className="doctor-section-heading">
+              <Calendar style={{ width: "20px", height: "20px" }} />
+              Weekly Overview
+            </h2>
+          </div>
+          {slots.length === 0 ? (
+            <p className="doctor-empty">No slots created yet.</p>
+          ) : (
+            <div className="doctor-week-grid">
+              {days.map((day) => {
+                const dayLabel = formatDate(day);
+                const daySlots = slots.filter((slot: any) => {
+                  const slotDate = new Date(slot.startAt);
+                  return (
+                    slotDate.getFullYear() === day.getFullYear() &&
+                    slotDate.getMonth() === day.getMonth() &&
+                    slotDate.getDate() === day.getDate()
+                  );
+                });
+
+                return (
+                  <div key={day.toISOString()} className="doctor-day-card">
+                    <h3 className="doctor-day-label">{dayLabel}</h3>
+                    <div className="doctor-day-slots">
+                      {daySlots.length === 0 ? (
+                        <p className="doctor-day-empty">No slots</p>
+                      ) : (
+                        daySlots.map((slot: any) => (
+                          <div key={slot.id} className="doctor-slot-item">
+                            <p className="doctor-slot-time">
+                              {formatTime(slot.startAt)} - {formatTime(slot.endAt)}
+                            </p>
+                            <span className={`doctor-slot-badge ${slot.status.toLowerCase()}`}>
+                              {slot.status === "AVAILABLE" ? "Available" : "Booked"}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="doctor-card">
+          <div className="doctor-section-header">
+            <h2 className="doctor-section-heading">All Timeslots</h2>
+          </div>
+          {slots.length === 0 ? (
+            <p className="doctor-empty">No slots yet.</p>
+          ) : (
+            <div className="doctor-slot-list">
+              {slots.map((slot: any) => (
+                <div key={slot.id} className="doctor-slot-row">
+                  <div>
+                    <p className="doctor-slot-row-time">
+                      {formatDateTime(slot.startAt)} - {formatDateTime(slot.endAt)}
+                    </p>
+                  </div>
+                  <span className={`doctor-slot-badge ${slot.status.toLowerCase()}`}>
+                    {slot.status === "AVAILABLE" ? "Available" : "Booked"}
+                  </span>
                 </div>
-                <div className="text-xs text-emerald-300">
-                  {slot.status === "AVAILABLE" ? "Open for booking" : "Booked"}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </section>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </main>
   );
 }

@@ -101,12 +101,12 @@ export default function AppointmentListClient({ items, userId, userName }: Props
         <Card key={appointment.id} className="glass">
           <CardHeader>
             <CardTitle>{appointment.patientEmail}</CardTitle>
-            <p className="text-sm text-mutedForeground">
+            <p className="text-sm text-slate-500">
               {appointment.startAt} - {appointment.endAt}
             </p>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-mutedForeground">Status: {appointment.status}</p>
+            <p className="text-xs text-slate-500">Status: {appointment.status}</p>
             {(() => {
               const countdown = getCountdown(appointment.startAtIso);
               return (

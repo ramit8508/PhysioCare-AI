@@ -3,9 +3,13 @@ import { getToken } from "next-auth/jwt";
 
 const isAdminRoute = (pathname: string) => pathname.startsWith("/admin");
 const isDoctorRoute = (pathname: string) => pathname.startsWith("/doctor");
+const isPatientRoute = (pathname: string) => pathname.startsWith("/patient");
 
 const isLoginRoute = (pathname: string) =>
-  pathname === "/admin/login" || pathname === "/doctor/login";
+  pathname === "/admin/login" || 
+  pathname === "/doctor/login" || 
+  pathname === "/login" ||
+  pathname.startsWith("/(auth)");
 
 const getSessionFromRequest = async (request: NextRequest) => {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -24,40 +28,68 @@ const getSessionFromRequest = async (request: NextRequest) => {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip middleware for API and static routes
   if (pathname.startsWith("/_next") || pathname.startsWith("/api")) {
     return NextResponse.next();
   }
 
+  // Allow blocked page
   if (pathname === "/blocked") {
+    return NextResponse.next();
+  }
+
+  // Skip middleware for login/auth routes
+  if (isLoginRoute(pathname)) {
     return NextResponse.next();
   }
 
   const session = await getSessionFromRequest(request);
 
+  // Check if user is blacklisted
   if (session?.isBlacklisted) {
     const url = request.nextUrl.clone();
     url.pathname = "/blocked";
     return NextResponse.redirect(url);
   }
 
-  if ((isAdminRoute(pathname) || isDoctorRoute(pathname)) && !session) {
-    const url = request.nextUrl.clone();
-    url.pathname = isAdminRoute(pathname) ? "/admin/login" : "/doctor/login";
-    return NextResponse.redirect(url);
-  }
-
-  if (isAdminRoute(pathname) && !isLoginRoute(pathname)) {
-    if (session?.role !== "ADMIN") {
+  // Protect admin routes
+  if (isAdminRoute(pathname)) {
+    if (!session) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/login";
+      return NextResponse.redirect(url);
+    }
+    if (session.role !== "ADMIN") {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";
       return NextResponse.redirect(url);
     }
   }
 
-  if (isDoctorRoute(pathname) && !isLoginRoute(pathname)) {
-    if (session?.role !== "DOCTOR") {
+  // Protect doctor routes
+  if (isDoctorRoute(pathname)) {
+    if (!session) {
       const url = request.nextUrl.clone();
       url.pathname = "/doctor/login";
+      return NextResponse.redirect(url);
+    }
+    if (session.role !== "DOCTOR") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/doctor/login";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Protect patient routes
+  if (isPatientRoute(pathname)) {
+    if (!session) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    if (session.role !== "PATIENT") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
       return NextResponse.redirect(url);
     }
   }
@@ -66,5 +98,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/doctor/:path*", "/blocked"],
+  matcher: ["/admin/:path*", "/doctor/:path*", "/patient/:path*", "/blocked"],
 };

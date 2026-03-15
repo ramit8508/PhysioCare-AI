@@ -3,8 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createDoctor, setBlacklist } from "./actions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { UserPlus, Users, Shield } from "lucide-react";
 
 type DoctorWithProfile = Prisma.UserGetPayload<{
   include: { doctorProfile: true };
@@ -39,133 +38,191 @@ export default async function AdminPage() {
   ])) as [DoctorWithProfile[], PatientWithProfile[]];
 
   return (
-    <main className="px-6 py-8">
-      <div className="max-w-5xl">
-        <h1 className="text-3xl font-semibold">Admin Dashboard</h1>
-        <p className="mt-2 text-sm text-mutedForeground">
-          Manage doctors and patients from one control center.
-        </p>
+    <main className="admin-shell">
+      <div className="admin-header">
+        <div>
+          <h1 className="admin-title">Admin Dashboard</h1>
+          <p className="admin-subtitle">
+            Manage doctors and patients from one control center.
+          </p>
+        </div>
+        <div className="admin-stats">
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon" style={{ background: "#dbeafe" }}>
+              <Shield style={{ width: "20px", height: "20px", color: "#0284c7" }} />
+            </div>
+            <div>
+              <p className="admin-stat-label">Total Doctors</p>
+              <p className="admin-stat-value">{doctors.length}</p>
+            </div>
+          </div>
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon" style={{ background: "#dcfce7" }}>
+              <Users style={{ width: "20px", height: "20px", color: "#16a34a" }} />
+            </div>
+            <div>
+              <p className="admin-stat-label">Total Patients</p>
+              <p className="admin-stat-value">{patients.length}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <Card className="glass mt-6 max-w-2xl">
-        <CardHeader>
-          <CardTitle>Create Doctor Account</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={createDoctor} className="grid gap-3">
-            <input
-              name="email"
-              type="email"
-              placeholder="Email"
-              required
-              className="h-10 rounded-md border border-white/10 bg-white/5 px-3"
-            />
-            <input
-              name="password"
-              type="password"
-              placeholder="Temporary password"
-              required
-              className="h-10 rounded-md border border-white/10 bg-white/5 px-3"
-            />
-            <input
-              name="degrees"
-              type="text"
-              placeholder="Degrees (BPT/MPT)"
-              required
-              className="h-10 rounded-md border border-white/10 bg-white/5 px-3"
-            />
-            <input
-              name="experienceYears"
-              type="number"
-              placeholder="Experience years"
-              className="h-10 rounded-md border border-white/10 bg-white/5 px-3"
-            />
-            <textarea
-              name="bio"
-              placeholder="Short bio"
-              rows={3}
-              className="rounded-md border border-white/10 bg-white/5 px-3 py-2"
-            />
-            <Button type="submit">Create Doctor</Button>
+      <div className="admin-content">
+        <section className="admin-card">
+          <div className="admin-section-header">
+            <div className="admin-section-title">
+              <UserPlus style={{ width: "20px", height: "20px" }} />
+              <h2>Create Doctor Account</h2>
+            </div>
+          </div>
+          <form action={createDoctor} className="admin-form">
+            <div className="admin-form-row">
+              <div className="admin-form-group">
+                <label className="admin-label">Email Address</label>
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="doctor@clinic.com"
+                  required
+                  className="admin-input"
+                />
+              </div>
+              <div className="admin-form-group">
+                <label className="admin-label">Temporary Password</label>
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="•••••••••"
+                  required
+                  className="admin-input"
+                />
+              </div>
+            </div>
+
+            <div className="admin-form-row">
+              <div className="admin-form-group">
+                <label className="admin-label">Degrees (BPT/MPT)</label>
+                <input
+                  name="degrees"
+                  type="text"
+                  placeholder="e.g., BPT, MPT"
+                  required
+                  className="admin-input"
+                />
+              </div>
+              <div className="admin-form-group">
+                <label className="admin-label">Experience (Years)</label>
+                <input
+                  name="experienceYears"
+                  type="number"
+                  placeholder="e.g., 5"
+                  className="admin-input"
+                />
+              </div>
+            </div>
+
+            <div className="admin-form-group">
+              <label className="admin-label">Short Bio</label>
+              <textarea
+                name="bio"
+                placeholder="Brief professional biography..."
+                rows={3}
+                className="admin-input"
+              />
+            </div>
+
+            <button type="submit" className="admin-button-primary">
+              <UserPlus style={{ width: "18px", height: "18px" }} />
+              Create Doctor Account
+            </button>
           </form>
-        </CardContent>
-      </Card>
+        </section>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-2">
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle>Doctors</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {doctors.map((doctor) => (
-              <div
-                key={doctor.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold">{doctor.email}</p>
-                  <p className="text-xs text-mutedForeground">
-                    {doctor.doctorProfile?.degrees || "-"} · {doctor.doctorProfile?.experienceYears ?? "-"} yrs
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-mutedForeground">
-                    {doctor.isBlacklisted ? "Blocked" : "Active"}
-                  </span>
-                  <form action={setBlacklist}>
-                    <input type="hidden" name="userId" value={doctor.id} />
-                    <input
-                      type="hidden"
-                      name="action"
-                      value={doctor.isBlacklisted ? "unblock" : "block"}
-                    />
-                    <Button type="submit" size="sm" variant="outline">
-                      {doctor.isBlacklisted ? "Unblock" : "Block"}
-                    </Button>
-                  </form>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <section className="admin-cards-grid">
+          <div className="admin-card">
+            <div className="admin-section-header">
+              <h2 className="admin-section-heading">
+                <Shield style={{ width: "20px", height: "20px" }} />
+                Doctors ({doctors.length})
+              </h2>
+            </div>
+            <div className="admin-list">
+              {doctors.length > 0 ? (
+                doctors.map((doctor) => (
+                  <div key={doctor.id} className="admin-list-item">
+                    <div className="admin-list-content">
+                      <p className="admin-list-name">{doctor.email}</p>
+                      <p className="admin-list-meta">
+                        {doctor.doctorProfile?.degrees || "—"} · {doctor.doctorProfile?.experienceYears ?? "—"} yrs
+                      </p>
+                    </div>
+                    <div className="admin-list-actions">
+                      <span className={`admin-badge ${doctor.isBlacklisted ? "blocked" : "active"}`}>
+                        {doctor.isBlacklisted ? "Blocked" : "Active"}
+                      </span>
+                      <form action={setBlacklist} style={{ display: "inline" }}>
+                        <input type="hidden" name="userId" value={doctor.id} />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value={doctor.isBlacklisted ? "unblock" : "block"}
+                        />
+                        <button type="submit" className="admin-button-small">
+                          {doctor.isBlacklisted ? "Unblock" : "Block"}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="admin-empty">No doctors created yet</p>
+              )}
+            </div>
+          </div>
 
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle>Patients</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {patients.map((patient) => (
-              <div
-                key={patient.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold">{patient.email}</p>
-                  <p className="text-xs text-mutedForeground">
-                    {patient.patientProfile?.displayName || "-"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-mutedForeground">
-                    {patient.isBlacklisted ? "Blocked" : "Active"}
-                  </span>
-                  <form action={setBlacklist}>
-                    <input type="hidden" name="userId" value={patient.id} />
-                    <input
-                      type="hidden"
-                      name="action"
-                      value={patient.isBlacklisted ? "unblock" : "block"}
-                    />
-                    <Button type="submit" size="sm" variant="outline">
-                      {patient.isBlacklisted ? "Unblock" : "Block"}
-                    </Button>
-                  </form>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </section>
+          <div className="admin-card">
+            <div className="admin-section-header">
+              <h2 className="admin-section-heading">
+                <Users style={{ width: "20px", height: "20px" }} />
+                Patients ({patients.length})
+              </h2>
+            </div>
+            <div className="admin-list">
+              {patients.length > 0 ? (
+                patients.map((patient) => (
+                  <div key={patient.id} className="admin-list-item">
+                    <div className="admin-list-content">
+                      <p className="admin-list-name">{patient.email}</p>
+                      <p className="admin-list-meta">
+                        {patient.patientProfile?.displayName || "No name set"}
+                      </p>
+                    </div>
+                    <div className="admin-list-actions">
+                      <span className={`admin-badge ${patient.isBlacklisted ? "blocked" : "active"}`}>
+                        {patient.isBlacklisted ? "Blocked" : "Active"}
+                      </span>
+                      <form action={setBlacklist} style={{ display: "inline" }}>
+                        <input type="hidden" name="userId" value={patient.id} />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value={patient.isBlacklisted ? "unblock" : "block"}
+                        />
+                        <button type="submit" className="admin-button-small">
+                          {patient.isBlacklisted ? "Unblock" : "Block"}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="admin-empty">No patients registered yet</p>
+              )}
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

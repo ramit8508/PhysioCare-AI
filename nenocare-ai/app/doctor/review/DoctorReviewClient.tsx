@@ -39,14 +39,14 @@ export default function DoctorReviewClient({ patients, records }: Props) {
   return (
     <section className="mt-6">
       <div className="flex flex-wrap items-center gap-3">
-        <label htmlFor="patientSelect" className="text-sm text-mutedForeground">
+        <label htmlFor="patientSelect" className="text-sm text-slate-500">
           Patient
         </label>
         <select
           id="patientSelect"
           value={selectedPatient}
           onChange={(event) => setSelectedPatient(event.target.value)}
-          className="h-10 rounded-md border border-white/10 bg-white/5 px-3 text-sm"
+          className="h-10 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm"
         >
           <option value="all">All patients</option>
           {patients.map((patient) => (
@@ -58,7 +58,7 @@ export default function DoctorReviewClient({ patients, records }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="mt-6 text-sm text-mutedForeground">No reports for this patient.</p>
+        <p className="mt-6 text-sm text-slate-500">No reports for this patient.</p>
       ) : (
         filtered.map((record) => (
           <Card
@@ -67,22 +67,22 @@ export default function DoctorReviewClient({ patients, records }: Props) {
           >
             <div>
               <h2 className="text-xl font-semibold">{record.exerciseName}</h2>
-              <p className="mt-2 text-sm text-mutedForeground">
+              <p className="mt-2 text-sm text-slate-500">
                 Patient: {record.patientEmail}
               </p>
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-mutedForeground">Reps</p>
+                  <p className="text-xs text-slate-500">Reps</p>
                   <p className="text-lg font-semibold">{record.repCount ?? "-"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-mutedForeground">Accuracy</p>
+                  <p className="text-xs text-slate-500">Accuracy</p>
                   <p className="text-lg font-semibold">
                     {record.accuracy ? `${record.accuracy}%` : "-"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-mutedForeground">Max Angle</p>
+                  <p className="text-xs text-slate-500">Max Angle</p>
                   <p className="text-lg font-semibold">
                     {record.maxAngle ? `${record.maxAngle}°` : "-"}
                   </p>
@@ -97,16 +97,16 @@ export default function DoctorReviewClient({ patients, records }: Props) {
                 <video
                   controls
                   src={record.videoUrl}
-                  className="w-full rounded-xl border border-white/10"
+                  className="w-full rounded-xl border border-slate-200"
                 />
               </motion.div>
             </div>
-            <div className="flex h-full flex-col rounded-xl border border-white/10 bg-black/20 p-4">
+            <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-slate-100 p-4">
               <h3 className="text-lg font-semibold">Groq Clinical Report</h3>
               <div className="mt-3 flex-1 whitespace-pre-wrap text-sm leading-relaxed">
                 {record.reportText || "Report not available."}
               </div>
-              <div className="mt-6 border-t border-white/10 pt-4 text-xs text-mutedForeground">
+              <div className="mt-6 border-t border-slate-200 pt-4 text-xs text-slate-500">
                 Digitally signed by NeroCare AI
                 <div className="signature mt-1 text-base text-emerald-300">
                   Dr. A. Patel, PT

@@ -22,7 +22,7 @@ type Props = {
 
 export default function ProgressChart({ data }: Props) {
   if (data.length === 0) {
-    return <p className="text-sm text-mutedForeground">No sessions in the last 7 days.</p>;
+    return <p className="text-sm text-slate-500">No sessions in the last 7 days.</p>;
   }
 
   return (

@@ -39,10 +39,16 @@ export default function RoleLoginForm({ role, callbackUrl }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
-      <input name="email" type="email" placeholder="Email" required />
-      <input name="password" type="password" placeholder="Password" required />
-      {error ? <p style={{ color: "crimson" }}>{error}</p> : null}
+    <form onSubmit={handleSubmit} className="auth-form">
+      <label className="auth-label" htmlFor="email">
+        Email
+        <input id="email" name="email" type="email" placeholder="you@clinic.com" required />
+      </label>
+      <label className="auth-label" htmlFor="password">
+        Password
+        <input id="password" name="password" type="password" placeholder="••••••••" required />
+      </label>
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <button type="submit" disabled={loading}>
         {loading ? "Signing in..." : `Sign in as ${role}`}
       </button>

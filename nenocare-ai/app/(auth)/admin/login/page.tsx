@@ -1,6 +1,7 @@
+import RoleLoginForm from "@/components/RoleLoginForm";
 import Link from "next/link";
 
-export default function SignupPage() {
+export default function AdminLoginPage() {
   return (
     <main className="auth-shell">
       <nav className="auth-nav">
@@ -13,15 +14,15 @@ export default function SignupPage() {
       <div className="auth-card">
         <div className="auth-card-header">
           <p className="auth-card-header-logo">NEROCARE</p>
-          <h1 className="auth-card-header-title">Create Patient Account</h1>
-          <p className="auth-card-header-desc">
-            Patient signup is now available directly on the login page.
-          </p>
+          <h1 className="auth-card-header-title">Admin Login</h1>
+          <p className="auth-card-header-desc">Manage access and platform operations.</p>
         </div>
         <div className="auth-card-content">
-          <Link href="/login" className="auth-nav-link">
-            Go to Patient Login
-          </Link>
+          <RoleLoginForm role="ADMIN" callbackUrl="/admin" />
+        </div>
+        <div className="auth-footer">
+          Patient? <Link href="/login">Patient login</Link> ·{" "}
+          <Link href="/doctor/login">Doctor login</Link>
         </div>
       </div>
     </main>

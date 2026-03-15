@@ -3,8 +3,7 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { bookSlot } from "./actions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Calendar, Clock, Award } from "lucide-react";
 
 const formatDateTime = (value: Date) =>
   value.toLocaleString("en-US", {
@@ -12,6 +11,7 @@ const formatDateTime = (value: Date) =>
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   });
 
 export default async function PatientDoctorsPage() {
@@ -40,64 +40,107 @@ export default async function PatientDoctorsPage() {
   });
 
   return (
-    <main className="px-6 py-8">
-      <div className="max-w-5xl">
-        <h1 className="text-3xl font-semibold">Book a Doctor</h1>
-        <p className="mt-2 text-sm text-mutedForeground">
-          Choose a physiotherapist and reserve a consultation slot.
-        </p>
-      </div>
+    <main className="patient-shell">
+      <div className="patient-main">
+        {/* Header */}
+        <div className="patient-header">
+          <h1 className="patient-header-title">Book a Doctor</h1>
+          <p className="patient-header-subtitle">
+            Choose a physiotherapist and reserve a consultation slot. Our experienced professionals are here to help your recovery journey.
+          </p>
+        </div>
 
-      <section className="mt-6 grid gap-6">
+        {/* Doctors Grid */}
         {doctors.length === 0 ? (
-          <p className="text-sm text-mutedForeground">No doctors available.</p>
+          <div className="patient-empty-state">
+            <div className="patient-empty-icon">👨‍⚕️</div>
+            <div className="patient-empty-title">No Doctors Available</div>
+            <p className="patient-empty-subtitle">
+              Please check back soon. We're adding more physiotherapists to our platform.
+            </p>
+            <Link href="/patient" className="patient-btn patient-btn-primary">
+              Back to Dashboard
+            </Link>
+          </div>
         ) : (
-          doctors.map((doctor) => {
-            const doctorSlots = slotsByDoctor.get(doctor.id) || [];
-            return (
-              <Card key={doctor.id} className="glass">
-                <CardHeader>
-                  <CardTitle>{doctor.email}</CardTitle>
-                  <p className="text-sm text-mutedForeground">
-                    {doctor.doctorProfile?.degrees || "Physiotherapist"} · {doctor.doctorProfile?.experienceYears ?? 0} yrs
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-mutedForeground">
-                    {doctor.doctorProfile?.bio || "Expert in recovery-focused programs."}
-                  </p>
-                  <div className="mt-3">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/patient/doctors/${doctor.id}`}>View profile</Link>
-                    </Button>
+          <div className="patient-grid">
+            {doctors.map((doctor) => {
+              const doctorSlots = slotsByDoctor.get(doctor.id) || [];
+              const doctorName = doctor.email?.split("@")[0] || "Doctor";
+              return (
+                <div key={doctor.id} className="patient-doctor-card">
+                  {/* Doctor Info */}
+                  <div className="patient-doctor-info">
+                    <div className="patient-doctor-name">{doctorName}</div>
+                    <div className="patient-doctor-specialty">
+                      {doctor.doctorProfile?.degrees || "Physiotherapist"}
+                    </div>
+                    <div className="patient-doctor-experience">
+                      <Award size={14} style={{ display: "inline", marginRight: "6px" }} />
+                      {doctor.doctorProfile?.experienceYears ?? 0} years of experience
+                    </div>
                   </div>
-                  <div className="mt-4 grid gap-3">
+
+                  {/* Bio */}
+                  <div className="patient-doctor-bio">
+                    {doctor.doctorProfile?.bio || "Expert in recovery-focused rehabilitation programs."}
+                  </div>
+
+                  {/* Action */}
+                  <div style={{ marginBottom: "16px" }}>
+                    <Link href={`/patient/doctors/${doctor.id}`} className="patient-btn patient-btn-secondary" style={{ width: "100%", textAlign: "center" }}>
+                      View Full Profile
+                    </Link>
+                  </div>
+
+                  {/* Available Slots */}
+                  <div>
                     {doctorSlots.length === 0 ? (
-                      <p className="text-xs text-mutedForeground">No open slots.</p>
+                      <div style={{
+                        padding: "12px",
+                        background: "linear-gradient(135deg, rgba(251, 146, 60, 0.05), rgba(249, 115, 22, 0.05))",
+                        border: "1px solid rgba(251, 146, 60, 0.2)",
+                        borderRadius: "10px",
+                        fontSize: "12px",
+                        color: "#ea580c",
+                        textAlign: "center",
+                      }}>
+                        ⏰ No open slots available
+                      </div>
                     ) : (
-                      doctorSlots.map((slot: any) => (
-                        <form
-                          key={slot.id}
-                          action={bookSlot}
-                          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3"
-                        >
-                          <div className="text-sm">
-                            {formatDateTime(slot.startAt)} - {formatDateTime(slot.endAt)}
-                          </div>
-                          <input type="hidden" name="slotId" value={slot.id} />
-                          <Button type="submit" size="sm">
-                            Book Slot
-                          </Button>
-                        </form>
-                      ))
+                      <div>
+                        <div style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          Available Slots
+                        </div>
+                        <div className="patient-slots-grid">
+                          {doctorSlots.map((slot: any) => (
+                            <form
+                              key={slot.id}
+                              action={bookSlot}
+                              className="patient-slot-item"
+                            >
+                              <div>
+                                <div className="patient-slot-time">
+                                  <Calendar size={14} style={{ display: "inline", marginRight: "6px" }} />
+                                  {formatDateTime(slot.startAt)}
+                                </div>
+                              </div>
+                              <input type="hidden" name="slotId" value={slot.id} />
+                              <button type="submit" className="patient-btn patient-btn-primary" style={{ fontSize: "12px", padding: "8px 16px" }}>
+                                Book Now
+                              </button>
+                            </form>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })
+                </div>
+              );
+            })}
+          </div>
         )}
-      </section>
+      </div>
     </main>
   );
 }
