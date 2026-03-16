@@ -10,7 +10,10 @@
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "setup": "npm install && npm run prisma:generate",
+    "seed": "echo 'Visit http://localhost:3000/api/admin/seed in your browser'",
+    "check": "npm run lint && npm run build"
   },
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",
