@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createContext, useContext, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle, AlertCircle, Info, X } from "lucide-react";
+import { CircleCheck as CheckCircle, Circle as XCircle, CircleAlert as AlertCircle, Info, X } from "lucide-react";
 
 type ToastType = "success" | "error" | "warning" | "info";
 
