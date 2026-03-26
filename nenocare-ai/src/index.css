@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 40% 8%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 40% 8%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 222 47% 4%;
+
+    --secondary: 215 20% 16%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 215 20% 16%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 222 47% 4%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 4%;
+
+    --border: 0 0% 100% / 0.1;
+    --input: 215 20% 16%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 222 40% 6%;
+    --sidebar-foreground: 215 16% 47%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 222 47% 4%;
+    --sidebar-accent: 215 20% 12%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 0 0% 100% / 0.06;
+    --sidebar-ring: 199 89% 48%;
+
+    --glass-bg: 222 40% 8%;
+    --glass-border: 0 0% 100% / 0.1;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  ::selection {
+    background: hsl(199 89% 48% / 0.3);
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply relative overflow-hidden rounded-2xl bg-slate-900/50 backdrop-blur-xl;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-subtle {
+    @apply relative overflow-hidden rounded-xl bg-slate-900/30 backdrop-blur-md;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-sky-600;
+  }
+
+  .font-mono-tabular {
+    font-variant-numeric: tabular-nums;
+    font-family: 'Geist Mono', ui-monospace, monospace;
+  }
+
+  .animate-entrance {
+    animation: entrance 0.4s cubic-bezier(0.2, 0, 0, 1) forwards;
+  }
+
+  @keyframes entrance {
+    from {
+      opacity: 0.4;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}

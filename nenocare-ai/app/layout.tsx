@@ -1,33 +1,17 @@
 import "./globals.css";
-import { Space_Grotesk, Source_Serif_4 } from "next/font/google";
-import ClientLayout from "@/components/ClientLayout";
+import type { Metadata } from "next";
+import { Providers } from "@/components/Providers";
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
-
-const sourceSerif = Source_Serif_4({
-  subsets: ["latin"],
-  variable: "--font-serif",
-});
-
-export const metadata = {
+export const metadata: Metadata = {
   title: "NeroCare AI",
-  description: "AI physiotherapy platform",
+  description: "AI-powered rehabilitation platform",
 };
 
-export default function RootLayout({
-  children
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body
-        className={`${spaceGrotesk.className} ${sourceSerif.variable} bg-background text-foreground antialiased`}
-      >
-        <ClientLayout>{children}</ClientLayout>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

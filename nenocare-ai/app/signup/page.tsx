@@ -1,29 +1,7 @@
-import Link from "next/link";
+"use client";
 
-export default function SignupPage() {
-  return (
-    <main className="auth-shell">
-      <nav className="auth-nav">
-        <div className="auth-logo">NeuroCareAI</div>
-        <Link href="/" className="auth-nav-link">
-          Back Home
-        </Link>
-      </nav>
+import SignupPage from "@/pages/SignupPage";
 
-      <div className="auth-card">
-        <div className="auth-card-header">
-          <p className="auth-card-header-logo">NEROCARE</p>
-          <h1 className="auth-card-header-title">Create Patient Account</h1>
-          <p className="auth-card-header-desc">
-            Patient signup is now available directly on the login page.
-          </p>
-        </div>
-        <div className="auth-card-content">
-          <Link href="/login" className="auth-nav-link">
-            Go to Patient Login
-          </Link>
-        </div>
-      </div>
-    </main>
-  );
+export default function Page() {
+  return <SignupPage />;
 }

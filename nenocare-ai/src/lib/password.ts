@@ -1,8 +1,12 @@
-import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto";
+
+const ITERATIONS = 100_000;
+const KEY_LENGTH = 64;
+const DIGEST = "sha512";
 
 export const hashPassword = (password: string) => {
   const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
+  const hash = pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString("hex");
   return `${salt}:${hash}`;
 };
 
@@ -12,13 +16,8 @@ export const verifyPassword = (password: string, stored: string) => {
     return false;
   }
 
-  const testHash = scryptSync(password, salt, 64).toString("hex");
-  const hashBuffer = Buffer.from(hash, "hex");
-  const testBuffer = Buffer.from(testHash, "hex");
-
-  if (hashBuffer.length !== testBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(hashBuffer, testBuffer);
+  const nextHash = pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString("hex");
+  const a = Buffer.from(hash);
+  const b = Buffer.from(nextHash);
+  return a.length === b.length && timingSafeEqual(a, b);
 };

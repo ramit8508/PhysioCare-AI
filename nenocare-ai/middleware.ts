@@ -4,10 +4,9 @@ import { getToken } from "next-auth/jwt";
 const isAdminRoute = (pathname: string) => pathname.startsWith("/admin");
 const isDoctorRoute = (pathname: string) => pathname.startsWith("/doctor");
 const isPatientRoute = (pathname: string) => pathname.startsWith("/patient");
+const isDashboardRoute = (pathname: string) => pathname.startsWith("/dashboard");
 
 const isLoginRoute = (pathname: string) =>
-  pathname === "/admin/login" || 
-  pathname === "/doctor/login" || 
   pathname === "/login" ||
   pathname.startsWith("/(auth)");
 
@@ -56,12 +55,12 @@ export async function middleware(request: NextRequest) {
   if (isAdminRoute(pathname)) {
     if (!session) {
       const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
+      url.pathname = "/login";
       return NextResponse.redirect(url);
     }
     if (session.role !== "ADMIN") {
       const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
+      url.pathname = "/login";
       return NextResponse.redirect(url);
     }
   }
@@ -70,12 +69,12 @@ export async function middleware(request: NextRequest) {
   if (isDoctorRoute(pathname)) {
     if (!session) {
       const url = request.nextUrl.clone();
-      url.pathname = "/doctor/login";
+      url.pathname = "/login";
       return NextResponse.redirect(url);
     }
     if (session.role !== "DOCTOR") {
       const url = request.nextUrl.clone();
-      url.pathname = "/doctor/login";
+      url.pathname = "/login";
       return NextResponse.redirect(url);
     }
   }
@@ -94,9 +93,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protect dashboard routes (patient trends)
+  if (isDashboardRoute(pathname)) {
+    if (!session) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    if (session.role !== "PATIENT") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/doctor/:path*", "/patient/:path*", "/blocked"],
+  matcher: ["/admin/:path*", "/doctor/:path*", "/patient/:path*", "/dashboard/:path*", "/blocked"],
 };

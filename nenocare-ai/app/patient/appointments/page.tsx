@@ -1,210 +1,243 @@
-import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import AppointmentListClient from "./AppointmentListClient";
-import { Calendar, Video, Clock, ChevronRight } from "lucide-react";
+"use client";
 
-const formatDateTime = (value: Date) =>
-  value.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+import { useMemo, useState } from "react";
+import { DashboardLayout } from "@/components/shared/DashboardLayout";
+import { GlassCard } from "@/components/shared/GlassCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { useAppointments } from "@/hooks/useAppointments";
+import { useSession } from "next-auth/react";
 
-export default async function PatientAppointmentsPage() {
-  const session = await getSession();
-  if (!session || session.role !== "PATIENT") {
-    redirect("/login");
-  }
+export default function PatientAppointmentsPage() {
+  const { status } = useSession();
 
-  const prismaAny = prisma as any;
-  const appointments = (await prismaAny.appointment.findMany({
-    where: { patientId: session.userId },
-    include: { doctor: true, slot: true },
-    orderBy: { createdAt: "desc" },
-  })) as Array<any>;
+  const [activeDoctor, setActiveDoctor] = useState<any | null>(null);
+  const [open, setOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedSlotId, setSelectedSlotId] = useState<string>("");
+  const { appointments, doctors, slots, isBooking, bookingError, bookSlot } = useAppointments(activeDoctor?.id);
 
-  // Separate upcoming and past appointments
-  const now = new Date();
-  const upcomingAppointments = appointments.filter(
-    (apt) => new Date(apt.slot.startAt) > now
-  );
-  const pastAppointments = appointments.filter(
-    (apt) => new Date(apt.slot.startAt) <= now
-  );
+  const availableSlots = useMemo(() => {
+    if (!selectedDate) {
+      return slots;
+    }
 
-  const items = appointments.map((appointment) => ({
-    id: appointment.id,
-    doctorEmail: appointment.doctor.email,
-    startAt: formatDateTime(appointment.slot.startAt),
-    endAt: formatDateTime(appointment.slot.endAt),
-    status: appointment.status,
-    roomId: appointment.roomId,
-    meetingUrl: appointment.meetingUrl,
-    startAtIso: new Date(appointment.slot.startAt).toISOString(),
-  }));
+    return slots.filter((slot: any) => {
+      const slotDate = new Date(slot.startAt);
+      return (
+        slotDate.getFullYear() === selectedDate.getFullYear() &&
+        slotDate.getMonth() === selectedDate.getMonth() &&
+        slotDate.getDate() === selectedDate.getDate()
+      );
+    });
+  }, [selectedDate, slots]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "APPROVED":
-        return { bg: "#dbeafe", color: "#0284c7" };
-      case "PENDING":
-        return { bg: "#fef3c7", color: "#d97706" };
-      case "COMPLETED":
-        return { bg: "#dcfce7", color: "#16a34a" };
-      case "CANCELED":
-        return { bg: "#fee2e2", color: "#dc2626" };
-      default:
-        return { bg: "#fef3c7", color: "#d97706" };
+  const openBookingDialog = (doctor: any) => {
+    setActiveDoctor(doctor);
+    setSelectedDate(new Date());
+    setSelectedSlotId("");
+    setOpen(true);
+  };
+
+  const requestAppointment = async () => {
+    if (!selectedSlotId) {
+      return;
+    }
+
+    try {
+      await bookSlot(selectedSlotId);
+      setOpen(false);
+      setSelectedSlotId("");
+    } catch {
+      return;
     }
   };
 
+  const statusPillClass = (status: string) => {
+    if (status === "PENDING") {
+      return "bg-warning/10 text-warning";
+    }
+    if (status === "APPROVED") {
+      return "bg-emerald-500/10 text-emerald-400";
+    }
+    if (status === "COMPLETED") {
+      return "bg-success/10 text-success";
+    }
+    return "bg-secondary text-muted-foreground";
+  };
+
+  const statusLabel = (status: string) => (status === "APPROVED" ? "CONFIRMED" : status);
+
+  if (status === "loading") {
+    return (
+      <DashboardLayout role="patient">
+        <div className="p-6 md:p-8 max-w-350 mx-auto">
+          <GlassCard className="p-5">
+            <p className="text-sm text-muted-foreground">Loading appointments...</p>
+          </GlassCard>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
-    <main className="patient-shell">
-      <div className="patient-main">
-        {/* Header */}
-        <div className="patient-header">
-          <h1 className="patient-header-title">Your Appointments</h1>
-          <p className="patient-header-subtitle">
-            View and manage all your scheduled telehealth sessions with our physiotherapists.
-          </p>
+    <DashboardLayout role="patient">
+      <div className="p-6 md:p-8 max-w-350 mx-auto space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Appointments</h1>
+          <p className="text-sm text-muted-foreground">Request appointments and join confirmed telehealth calls.</p>
         </div>
 
-        {items.length === 0 ? (
-          <div className="patient-empty-state">
-            <div className="patient-empty-icon">📅</div>
-            <div className="patient-empty-title">No Appointments Yet</div>
-            <p className="patient-empty-subtitle">
-              You haven't booked any appointments. Start by browsing our available physiotherapists.
-            </p>
-            <Link href="/patient/doctors" className="patient-btn patient-btn-primary">
-              <Calendar size={16} />
-              Book an Appointment
-            </Link>
-          </div>
-        ) : (
-          <>
-            {/* Upcoming Appointments */}
-            {upcomingAppointments.length > 0 && (
-              <div className="patient-section">
-                <h2 className="patient-section-title">Upcoming Appointments</h2>
-                <div style={{ display: "grid", gap: "16px" }}>
-                  {upcomingAppointments.map((appointment: any) => {
-                    const appointmentItem = items.find(
-                      (item) => item.id === appointment.id
-                    );
-                    const statusColor = getStatusColor(appointment.status);
-                    const doctorName = appointment.doctor.email?.split("@")[0] || "Doctor";
+        <GlassCard className="p-5 space-y-3">
+          <p className="text-sm font-semibold text-foreground">Available Doctors</p>
+          {doctors.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No doctors available right now.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {doctors.map((doctor: any) => (
+                <div key={doctor.id} className="rounded-xl border border-white/6 bg-secondary/30 p-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{doctor.fullName || doctor.email}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{doctor.specialization}</p>
+                  </div>
 
-                    return (
-                      <div
-                        key={appointment.id}
-                        className="patient-doctor-card"
-                        style={{
-                          borderLeft: "4px solid #6366f1",
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
-                          <div>
-                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#6366f1" }}>
-                              {doctorName}
-                            </div>
-                            <div style={{ fontSize: "16px", fontWeight: 700, color: "#0f172a", marginTop: "4px" }}>
-                              Consultation Session
-                            </div>
-                          </div>
-                          <div
-                            className="patient-status-badge"
-                            style={{
-                              background: statusColor.bg,
-                              color: statusColor.color,
-                            }}
-                          >
-                            {appointment.status}
-                          </div>
-                        </div>
+                  <div className="space-y-1.5 text-xs text-muted-foreground">
+                    <p>Degree: <span className="text-foreground/90">{doctor.degrees || "Not specified"}</span></p>
+                    <p>Experience: <span className="text-foreground/90">{doctor.experienceYears ? `${doctor.experienceYears} years` : "Not specified"}</span></p>
+                    <p>{doctor.availableSlotsCount} open slots</p>
+                    {doctor.slotsPreview?.[0] && (
+                      <p>
+                        Next slot: <span className="text-foreground/90">{new Date(doctor.slotsPreview[0].startAt).toLocaleString()}</span>
+                      </p>
+                    )}
+                  </div>
 
-                        <div style={{ display: "grid", gap: "12px", marginBottom: "16px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", color: "#64748b" }}>
-                            <Calendar size={16} style={{ color: "#6366f1" }} />
-                            <strong>{appointmentItem?.startAt}</strong>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", color: "#64748b" }}>
-                            <Clock size={16} style={{ color: "#6366f1" }} />
-                            <span>Session Duration: 45 minutes</span>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", color: "#64748b" }}>
-                            <Video size={16} style={{ color: "#6366f1" }} />
-                            <span>Telehealth via Video Call</span>
-                          </div>
-                        </div>
-
-                        <AppointmentListClient
-                          items={[appointmentItem!]}
-                          userId={session.userId}
-                          userName="Patient"
-                        />
-                      </div>
-                    );
-                  })}
+                  <button
+                    onClick={() => openBookingDialog(doctor)}
+                    disabled={!doctor.availableSlotsCount}
+                    className="w-full rounded-lg bg-primary text-primary-foreground text-xs font-semibold py-2 disabled:opacity-60"
+                  >
+                    Request Appointment
+                  </button>
                 </div>
+              ))}
+            </div>
+          )}
+        </GlassCard>
+
+        <GlassCard className="p-5 space-y-3">
+          <p className="text-sm font-semibold text-foreground">My Appointments</p>
+          {appointments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No appointments yet.</p>
+          ) : (
+            <div className="grid gap-3">
+              {appointments.map((appointment: any) => (
+                <div key={appointment.id} className="rounded-xl border border-white/6 bg-secondary/30 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground">{appointment.doctorName || appointment.doctorEmail}</p>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusPillClass(appointment.status)}`}>
+                      {statusLabel(appointment.status)}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(appointment.startAt).toLocaleString()} → {new Date(appointment.endAt).toLocaleString()}
+                  </p>
+
+                  {appointment.status === "PENDING" && (
+                    <button
+                      disabled
+                      className="inline-flex px-3 py-1.5 rounded-lg bg-warning/10 text-warning text-xs font-semibold cursor-not-allowed"
+                    >
+                      Awaiting Doctor Confirmation
+                    </button>
+                  )}
+
+                  {appointment.status === "APPROVED" && appointment.meetingUrl && (
+                    <a
+                      href={`${appointment.meetingUrl}${String(appointment.meetingUrl).includes("?") ? "&" : "?"}actor=PATIENT`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex px-3 py-1.5 rounded-lg bg-emerald-500 text-emerald-950 text-xs font-semibold animate-pulse"
+                    >
+                      Join Video Call
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </GlassCard>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Request Appointment</DialogTitle>
+              <DialogDescription>
+                {activeDoctor ? `Choose a date and slot for ${activeDoctor.fullName || activeDoctor.email}.` : "Choose a date and slot."}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid md:grid-cols-[300px,1fr] gap-4">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                disabled={(date) => {
+                  const now = new Date();
+                  now.setHours(0, 0, 0, 0);
+                  return date < now;
+                }}
+                className="rounded-lg border border-white/6"
+              />
+
+              <div className="space-y-2 max-h-75 overflow-y-auto pr-1">
+                {availableSlots.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No open slots for this date.</p>
+                ) : (
+                  availableSlots.map((slot: any) => (
+                    <button
+                      key={slot.id}
+                      onClick={() => setSelectedSlotId(slot.id)}
+                      className={`w-full text-left rounded-lg border px-3 py-2 text-xs transition ${
+                        selectedSlotId === slot.id
+                          ? "border-primary/50 bg-primary/10 text-foreground"
+                          : "border-white/6 bg-secondary/30 text-muted-foreground"
+                      }`}
+                    >
+                      {new Date(slot.startAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      {" "}→{" "}
+                      {new Date(slot.endAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </button>
+                  ))
+                )}
               </div>
+            </div>
+
+            {bookingError && (
+              <p className="text-xs text-destructive">{bookingError}</p>
             )}
 
-            {/* Past Appointments */}
-            {pastAppointments.length > 0 && (
-              <div className="patient-section">
-                <h2 className="patient-section-title">Completed Appointments</h2>
-                <div style={{ display: "grid", gap: "16px" }}>
-                  {pastAppointments.map((appointment: any) => {
-                    const statusColor = getStatusColor(appointment.status);
-                    const doctorName = appointment.doctor.email?.split("@")[0] || "Doctor";
-
-                    return (
-                      <div
-                        key={appointment.id}
-                        className="patient-doctor-card"
-                        style={{
-                          opacity: 0.7,
-                          borderLeft: "4px solid #94a3b8",
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <div>
-                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#94a3b8" }}>
-                              {doctorName}
-                            </div>
-                            <div style={{ fontSize: "16px", fontWeight: 700, color: "#0f172a", marginTop: "4px" }}>
-                              Consultation Session
-                            </div>
-                          </div>
-                          <div
-                            className="patient-status-badge"
-                            style={{
-                              background: statusColor.bg,
-                              color: statusColor.color,
-                            }}
-                          >
-                            {appointment.status}
-                          </div>
-                        </div>
-
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", color: "#94a3b8", marginTop: "12px" }}>
-                          <Calendar size={16} />
-                          <span>{formatDateTime(appointment.slot.startAt)}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </>
-        )}
+            <DialogFooter>
+              <button
+                onClick={requestAppointment}
+                disabled={!selectedSlotId || isBooking}
+                className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-60"
+              >
+                {isBooking ? "Submitting..." : "Submit Request"}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-    </main>
+    </DashboardLayout>
   );
 }
 

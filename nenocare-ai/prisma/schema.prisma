@@ -39,6 +39,8 @@ model User {
   prescriptionsAsPatient ExercisePrescription[] @relation("PatientPrescriptions")
   sessionRecordsAsDoctor  ExerciseSessionRecord[] @relation("DoctorSessionRecords")
   sessionRecordsAsPatient ExerciseSessionRecord[] @relation("PatientSessionRecords")
+  telehealthCallsAsDoctor TelehealthCallRecord[]  @relation("DoctorTelehealthCalls")
+  telehealthCallsAsPatient TelehealthCallRecord[] @relation("PatientTelehealthCalls")
   slotsAsDoctor           DoctorSlot[]           @relation("DoctorSlots")
   appointmentsAsDoctor    Appointment[]          @relation("DoctorAppointments")
   appointmentsAsPatient   Appointment[]          @relation("PatientAppointments")
@@ -47,6 +49,8 @@ model User {
 model DoctorProfile {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   userId          String   @unique @db.ObjectId
+  fullName        String   @default("")
+  specialization  String   @default("")
   degrees         String
   experienceYears Int?
   bio             String?
@@ -65,19 +69,33 @@ model PatientProfile {
 }
 
 model ExercisePrescription {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  doctorId   String   @db.ObjectId
-  patientId  String   @db.ObjectId
-  exerciseId String
-  name       String?
-  gifUrl     String?
-  bodyPart   String?
-  target     String?
-  createdAt  DateTime @default(now())
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  doctorId      String   @db.ObjectId
+  patientId     String   @db.ObjectId
+  appointmentId String?  @db.ObjectId
+  exerciseId    String?
+  name          String?
+  gifUrl        String?
+  bodyPart      String?
+  target        String?
+  createdAt     DateTime @default(now())
 
-  doctor  User @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
-  patient User @relation("PatientPrescriptions", fields: [patientId], references: [id])
-  sessions ExerciseSessionRecord[]
+  doctor    User                    @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
+  patient   User                    @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  exercises ExercisePrescriptionItem[]
+  sessions  ExerciseSessionRecord[]
+}
+
+model ExercisePrescriptionItem {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  prescriptionId String   @db.ObjectId
+  name           String
+  reps           Int
+  sets           Int
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  prescription ExercisePrescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
 }
 
 model ExerciseSessionRecord {
@@ -123,4 +141,21 @@ model Appointment {
   doctor   User       @relation("DoctorAppointments", fields: [doctorId], references: [id])
   patient  User       @relation("PatientAppointments", fields: [patientId], references: [id])
   slot     DoctorSlot @relation(fields: [slotId], references: [id])
+  telehealthCall TelehealthCallRecord?
+}
+
+model TelehealthCallRecord {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  appointmentId String   @unique @db.ObjectId
+  roomId        String
+  doctorId      String   @db.ObjectId
+  patientId     String   @db.ObjectId
+  videoUrl      String
+  durationSec   Int?
+  reportText    String?
+  createdAt     DateTime @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  doctor      User        @relation("DoctorTelehealthCalls", fields: [doctorId], references: [id])
+  patient     User        @relation("PatientTelehealthCalls", fields: [patientId], references: [id])
 }
