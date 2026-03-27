@@ -6,7 +6,7 @@ type ActorContext = {
   name?: string;
 };
 
-const actorKey = (role: ActorRole) => `nerocare_actor_${role.toLowerCase()}`;
+const actorKey = (role: ActorRole) => `physiocare_actor_${role.toLowerCase()}`;
 
 export function setActorContext(context: ActorContext) {
   if (typeof window === "undefined") {

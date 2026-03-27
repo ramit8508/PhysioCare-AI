@@ -1,18 +1,18 @@
 # Node
-nenocare-ai/node_modules/
+physiocare-ai/node_modules/
 
 # Next.js
-nenocare-ai/.next/
-nenocare-ai/out/
+physiocare-ai/.next/
+physiocare-ai/out/
 
 # Env files
-nenocare-ai/.env
-nenocare-ai/.env.*
+physiocare-ai/.env
+physiocare-ai/.env.*
 
 # Logs
-nenocare-ai/npm-debug.log*
-nenocare-ai/yarn-debug.log*
-nenocare-ai/yarn-error.log*
+physiocare-ai/npm-debug.log*
+physiocare-ai/yarn-debug.log*
+physiocare-ai/yarn-error.log*
 
 # OS
 .DS_Store

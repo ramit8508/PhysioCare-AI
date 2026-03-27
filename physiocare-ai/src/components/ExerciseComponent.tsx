@@ -10,7 +10,7 @@ import { getActorHeaders } from "@/lib/actor-context";
 import { parseAiReportSections } from "@/lib/report-format";
 
 const TARGET_REPS = 10;
-const PRESCRIPTIONS_CACHE_KEY = "nerocare_patient_prescriptions_cache";
+const PRESCRIPTIONS_CACHE_KEY = "physiocare_patient_prescriptions_cache";
 
 function readPrescriptionCache() {
   if (typeof window === "undefined") {

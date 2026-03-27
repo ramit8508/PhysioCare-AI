@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "NeroCare AI",
+  title: "PhysioCare AI",
   description: "AI-powered rehabilitation platform",
 };
 

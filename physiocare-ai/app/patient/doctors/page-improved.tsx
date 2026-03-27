@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import Link from "next/link";
-import { bookSlot } from "./actions";
 import DoctorCard from "./DoctorCard";
-import { Search } from "lucide-react";
 
 const formatDateTime = (value: Date) =>
   value.toLocaleString("en-US", {
@@ -14,9 +13,59 @@ const formatDateTime = (value: Date) =>
     minute: "2-digit",
   });
 
+async function bookSlot(formData: FormData) {
+  "use server";
+
+  const session = await getSession();
+  const sessionUser = session?.user as { id?: string; role?: string } | undefined;
+  if (!sessionUser || sessionUser.role !== "PATIENT" || !sessionUser.id) {
+    throw new Error("Unauthorized");
+  }
+  const patientId = sessionUser.id;
+
+  const slotId = String(formData.get("slotId") || "");
+  if (!slotId) {
+    throw new Error("slotId is required");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const slot = await tx.doctorSlot.findUnique({ where: { id: slotId } });
+
+    if (!slot) {
+      throw new Error("Slot not found");
+    }
+
+    if (slot.status !== "AVAILABLE") {
+      throw new Error("Slot already booked");
+    }
+
+    if (slot.startAt < new Date()) {
+      throw new Error("Cannot book past slot");
+    }
+
+    await tx.appointment.create({
+      data: {
+        doctorId: slot.doctorId,
+        patientId,
+        slotId: slot.id,
+        status: "PENDING",
+      },
+    });
+
+    await tx.doctorSlot.update({
+      where: { id: slot.id },
+      data: { status: "BOOKED" },
+    });
+  });
+
+  revalidatePath("/patient/doctors");
+  revalidatePath("/patient/appointments");
+}
+
 export default async function PatientDoctorsPage() {
   const session = await getSession();
-  if (!session || session.role !== "PATIENT") {
+  const sessionRole = (session?.user as { role?: string } | undefined)?.role;
+  if (!session || sessionRole !== "PATIENT") {
     redirect("/login");
   }
 

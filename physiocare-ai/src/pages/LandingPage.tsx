@@ -46,7 +46,7 @@ export default function LandingPage() {
         <div className="flex items-center justify-between px-6 md:px-12 py-5 max-w-7xl mx-auto">
           <div className="flex items-center gap-2.5 font-bold text-xl tracking-tighter">
             <BrainCircuit className="text-cyan-400 w-8 h-8" />
-            <span className="text-gradient">NEROCARE AI</span>
+            <span className="text-gradient">PHYSIOCARE AI</span>
           </div>
           <div className="flex items-center gap-3">
             {/* Role Switcher */}
@@ -104,7 +104,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="max-w-3xl mx-auto text-muted-foreground text-lg md:text-xl mb-12 leading-relaxed">
-            NeroCare AI combines computer vision, artificial intelligence, and clinical expertise to revolutionize neurological rehabilitation. Real-time form correction, personalized feedback, and remote doctor supervision in one unified platform.
+            PhysioCare AI combines computer vision, artificial intelligence, and clinical expertise to revolutionize neurological rehabilitation. Real-time form correction, personalized feedback, and remote doctor supervision in one unified platform.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
@@ -302,7 +302,7 @@ export default function LandingPage() {
               <Link href="/signup" className="btn-primary px-10 py-4 text-base justify-center">
                 Start Free Trial
               </Link>
-              <a href="mailto:contact@nerocare.ai" className="btn-secondary px-10 py-4 text-base justify-center">
+              <a href="mailto:contact@physiocare.ai" className="btn-secondary px-10 py-4 text-base justify-center">
                 Contact Sales
               </a>
             </div>
@@ -316,7 +316,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="flex items-center gap-2 col-span-1 md:col-span-2">
               <BrainCircuit className="text-cyan-400 w-6 h-6" />
-              <span className="font-bold">© 2026 NeroCare AI</span>
+              <span className="font-bold">© 2026 PhysioCare AI</span>
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground">
               <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
@@ -328,7 +328,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-white/6 pt-8 text-center text-sm text-muted-foreground">
-            <p>NeroCare AI is a clinically-validated rehabilitation platform for neurological recovery.</p>
+            <p>PhysioCare AI is a clinically-validated rehabilitation platform for neurological recovery.</p>
           </div>
         </div>
       </footer>

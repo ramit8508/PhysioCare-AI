@@ -152,7 +152,7 @@ All setup guides have troubleshooting sections.
 ## Code Structure
 
 ```
-nenocare-ai/
+physiocare-ai/
 ├── Documentation/
 │   ├── README.md              (Technical docs)
 │   ├── SUMMARY.md            (Overview)

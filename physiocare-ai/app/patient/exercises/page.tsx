@@ -6,7 +6,7 @@ import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { BookOpen, CheckCircle2 } from "lucide-react";
 import { getActorHeaders } from "@/lib/actor-context";
 
-const PRESCRIPTIONS_CACHE_KEY = "nerocare_patient_prescriptions_cache";
+const PRESCRIPTIONS_CACHE_KEY = "physiocare_patient_prescriptions_cache";
 
 function readPrescriptionCache() {
   if (typeof window === "undefined") {

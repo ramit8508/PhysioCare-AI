@@ -36,7 +36,7 @@ A comprehensive Next.js 14 application for multi-role healthcare experiences wit
 
 1. **Clone and install dependencies**
    ```bash
-   cd nenocare-ai
+   cd physiocare-ai
    npm install
    ```
 

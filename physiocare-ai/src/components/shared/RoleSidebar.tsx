@@ -54,7 +54,7 @@ export function RoleSidebar({ role }: { role: Role }) {
       <div className="flex items-center gap-3 px-5 py-6 border-b border-white/6">
         <BrainCircuit className="text-primary w-7 h-7 shrink-0" />
         {!collapsed && (
-          <span className="font-bold text-lg tracking-tighter text-foreground">NEROCARE AI</span>
+          <span className="font-bold text-lg tracking-tighter text-foreground">PHYSIOCARE AI</span>
         )}
       </div>
 

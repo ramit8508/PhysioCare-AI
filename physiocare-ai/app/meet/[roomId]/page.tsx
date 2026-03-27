@@ -44,7 +44,7 @@ export default function MeetPage() {
       return;
     }
 
-    const storageKey = "nerocare_tab_id";
+    const storageKey = "physiocare_tab_id";
     let tabId = sessionStorage.getItem(storageKey);
     if (!tabId) {
       tabId = Math.random().toString(36).slice(2, 10);

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Award, Calendar, Clock, MapPin, Star } from "lucide-react";
+import { Award, Calendar, Clock, Star } from "lucide-react";
 import { motion } from "framer-motion";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/use-toast";
 
 type Slot = {
   id: string;
@@ -31,7 +31,7 @@ type Props = {
 
 export default function DoctorCard({ doctor, slots, formatDateTime, bookSlot }: Props) {
   const [bookingSlotId, setBookingSlotId] = useState<string | null>(null);
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const doctorName = doctor.email?.split("@")[0] || "Doctor";
 
   const handleBookSlot = async (slotId: string) => {
@@ -41,9 +41,16 @@ export default function DoctorCard({ doctor, slots, formatDateTime, bookSlot }: 
 
     try {
       await bookSlot(formData);
-      showToast("success", "Appointment booked successfully! Waiting for doctor approval.");
-    } catch (error) {
-      showToast("error", "Failed to book appointment. Please try again.");
+      toast({
+        title: "Appointment booked",
+        description: "Appointment booked successfully! Waiting for doctor approval.",
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Booking failed",
+        description: "Failed to book appointment. Please try again.",
+      });
     } finally {
       setBookingSlotId(null);
     }
