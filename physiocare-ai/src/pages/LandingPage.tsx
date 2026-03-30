@@ -5,6 +5,8 @@ import { BrainCircuit, ShieldCheck, Activity, Zap, BarChart3, Video, ArrowRight,
 import { GlassCard } from "@/components/shared/GlassCard";
 import Link from "next/link";
 import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const features = [
   { icon: Activity, title: "Real-Time Tracking", desc: "AI-powered pose estimation monitors every movement with clinical precision.", color: "from-blue-500 to-cyan-500" },
@@ -38,6 +40,31 @@ const roles = ["Patient", "Doctor", "Admin"] as const;
 
 export default function LandingPage() {
   const [activeRole, setActiveRole] = useState<string>("Patient");
+  const [demoLoading, setDemoLoading] = useState(false);
+  const router = useRouter();
+
+  const handleDemoProfile = async () => {
+    if (demoLoading) {
+      return;
+    }
+
+    setDemoLoading(true);
+    const result = await signIn("credentials", {
+      redirect: false,
+      email: "demo@physiocare.ai",
+      password: "demo123",
+      role: "Patient",
+    });
+
+    setDemoLoading(false);
+
+    if (!result || result.error) {
+      router.push("/login");
+      return;
+    }
+
+    router.push("/patient");
+  };
 
   return (
     <main className="min-h-screen bg-background text-foreground selection:bg-primary/30">
@@ -61,7 +88,7 @@ export default function LandingPage() {
                   {activeRole === role && (
                     <motion.div
                       layoutId="rolePill"
-                      className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
+                      className="absolute inset-0 bg-linear-to-r from-cyan-500 to-blue-500 rounded-full"
                       style={{ zIndex: -1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 35 }}
                     />
@@ -86,7 +113,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative pt-20 md:pt-32 pb-32 px-6 overflow-hidden">
         {/* Background Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-gradient-to-b from-cyan-500/10 via-blue-500/5 to-transparent blur-3xl rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-linear-to-b from-cyan-500/10 via-blue-500/5 to-transparent blur-3xl rounded-full" />
         
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -116,12 +143,14 @@ export default function LandingPage() {
               Start Free Trial
               <ArrowRight size={18} />
             </Link>
-            <Link
-              href="/patient"
+            <button
+              type="button"
+              onClick={handleDemoProfile}
+              disabled={demoLoading}
               className="btn-secondary px-8 py-4 text-base justify-center"
             >
-              Watch Demo
-            </Link>
+              {demoLoading ? "Opening Demo..." : "Open Demo Profile"}
+            </button>
           </div>
 
           {/* Stats */}
@@ -174,8 +203,8 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
               >
-                <div className={`glass-card p-7 bg-gradient-to-br ${f.color} bg-opacity-5 hover:border-white/12 transition-all h-full`}>
-                  <div className={`p-4 rounded-xl bg-gradient-to-br ${f.color} bg-opacity-20 w-fit mb-5`}>
+                <div className={`glass-card p-7 bg-linear-to-br ${f.color} bg-opacity-5 hover:border-white/12 transition-all h-full`}>
+                  <div className={`p-4 rounded-xl bg-linear-to-br ${f.color} bg-opacity-20 w-fit mb-5`}>
                     <IconComponent size={24} className="text-white/70" />
                   </div>
                   <h3 className="text-lg font-bold text-foreground mb-3">{f.title}</h3>
@@ -293,7 +322,7 @@ export default function LandingPage() {
           viewport={{ once: true }}
           className="max-w-4xl mx-auto"
         >
-          <div className="glass-card p-12 md:p-16 rounded-3xl bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-transparent text-center">
+          <div className="glass-card p-12 md:p-16 rounded-3xl bg-linear-to-br from-cyan-500/10 via-blue-500/5 to-transparent text-center">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Transform Rehabilitation?</h2>
             <p className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto">
               Join clinics and patients worldwide in revolutionizing exercise compliance and recovery outcomes.

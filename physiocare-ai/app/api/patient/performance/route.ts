@@ -13,6 +13,20 @@ type SessionSummary = {
 	reportText: string;
 };
 
+function resolveDemoPatient(email: string) {
+	const normalizedEmail = String(email || "").trim().toLowerCase();
+	const configured = String(process.env.DEMO_PATIENT_EMAILS || "")
+		.split(",")
+		.map((item) => item.trim().toLowerCase())
+		.filter(Boolean);
+
+	if (configured.includes(normalizedEmail)) {
+		return true;
+	}
+
+	return normalizedEmail.includes("demo");
+}
+
 async function buildCombinedGroqReport(sessions: SessionSummary[]) {
 	const fallback = [
 		"## Overall Progress",
@@ -99,9 +113,52 @@ export async function GET(request: Request) {
 	const session = await getSession();
 	const user = session?.user as any;
 	const actor = resolveActorFromRequest(request, { id: user?.id, role: user?.role }, "PATIENT");
+	const isDemoPatient = actor?.role === "PATIENT" && resolveDemoPatient(String(user?.email || ""));
 
 	if (!actor?.id || actor.role !== "PATIENT") {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
+
+	if (isDemoPatient) {
+		return NextResponse.json({
+			summary: {
+				totalSessions: 18,
+				avgAccuracy: 91.6,
+				avgReps: 13.4,
+				bestAngle: 124.2,
+				totalMinutesEstimate: 63,
+			},
+			chart: [
+				{ day: "Mon", score: 82 },
+				{ day: "Tue", score: 85 },
+				{ day: "Wed", score: 88 },
+				{ day: "Thu", score: 90 },
+				{ day: "Fri", score: 92 },
+				{ day: "Sat", score: 94 },
+				{ day: "Sun", score: 93 },
+			],
+			combinedReport: [
+				"## Overall Progress",
+				"- Session consistency is strong with 18 sessions completed.",
+				"- Average form accuracy remains above 90% across the week.",
+				"- Mobility range shows stable gains in shoulder and elbow movement.",
+				"",
+				"## Strengths",
+				"- Good control at end range with fewer compensation patterns.",
+				"- Repetition quality is steady at moderate intensity.",
+				"- Recovery pacing between sets is appropriate.",
+				"",
+				"## Focus Areas",
+				"- Maintain scapular stability during overhead motion.",
+				"- Improve wrist alignment in final reps to reduce fatigue drift.",
+				"- Keep breathing rhythm consistent during hard sets.",
+				"",
+				"## Next Week Plan",
+				"- Complete 4 guided sessions with tempo-focused repetitions.",
+				"- Add one mobility-focused day for shoulder and wrist range.",
+				"- Target average session accuracy above 92%.",
+			].join("\n"),
+		});
 	}
 
 	const rows = await prisma.exerciseSessionRecord.findMany({

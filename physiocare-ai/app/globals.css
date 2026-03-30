@@ -131,6 +131,22 @@
   button, a {
     @apply transition-all duration-200;
   }
+
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input[type="button"]:disabled,
+  input[type="submit"]:disabled,
+  input[type="reset"]:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer utilities {
@@ -144,7 +160,7 @@
   }
 
   .glass-card {
-    @apply relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl border border-white/8;
+    @apply relative overflow-hidden rounded-xl bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl border border-white/8;
   }
 
   .card-hover {
@@ -153,11 +169,11 @@
 
   /* Text Effects */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500;
+    @apply bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-blue-500;
   }
 
   .text-gradient-alt {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400;
+    @apply bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-400;
   }
 
   .text-balance {
@@ -208,7 +224,7 @@
 
   /* Button Styles */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
@@ -295,12 +311,12 @@
 
   /* Stat Card */
   .stat-card {
-    @apply relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl border border-white/8 p-5;
+    @apply relative overflow-hidden rounded-2xl bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl border border-white/8 p-5;
   }
 
   /* Feature Card */
   .feature-card {
-    @apply relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl border border-white/8 p-6 flex flex-col gap-4 hover:border-white/12 hover:bg-slate-800/50 hover:shadow-lg transition-all duration-300 cursor-pointer;
+    @apply relative overflow-hidden rounded-2xl bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl border border-white/8 p-6 flex flex-col gap-4 hover:border-white/12 hover:bg-slate-800/50 hover:shadow-lg transition-all duration-300 cursor-pointer;
   }
 
   /* Responsive Grid */

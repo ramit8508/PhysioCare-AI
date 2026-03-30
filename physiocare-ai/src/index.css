@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-@tailwind base;
-@tailwind components;
+@import "tailwindcss/preflight";
 @tailwind utilities;
 
 @layer base {
@@ -90,7 +89,7 @@
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-sky-600;
+    @apply bg-clip-text text-transparent bg-linear-to-r from-sky-400 to-sky-600;
   }
 
   .font-mono-tabular {

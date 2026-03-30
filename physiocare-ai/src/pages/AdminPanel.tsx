@@ -41,8 +41,8 @@ export default function AdminPanel() {
     },
   });
 
-  const users = Array.isArray(usersData?.items) ? usersData.items : [];
-  const reports = Array.isArray(reportsData?.items) ? reportsData.items : [];
+  const users = useMemo(() => (Array.isArray(usersData?.items) ? usersData.items : []), [usersData]);
+  const reports = useMemo(() => (Array.isArray(reportsData?.items) ? reportsData.items : []), [reportsData]);
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -157,7 +157,7 @@ export default function AdminPanel() {
                       <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
                       <p className="text-3xl font-bold font-mono text-foreground">{stat.value}</p>
                     </div>
-                    <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} bg-opacity-10`}>
+                    <div className={`p-3 rounded-xl bg-linear-to-br ${stat.color} bg-opacity-10`}>
                       <IconComponent size={18} className="text-white/70" />
                     </div>
                   </div>

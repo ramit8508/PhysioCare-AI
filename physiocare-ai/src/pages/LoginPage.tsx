@@ -140,7 +140,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-sm text-muted-foreground text-center mt-6">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-primary hover:text-primary/80 font-medium transition-colors">Sign up</Link>
           </p>
         </GlassCard>

@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BrainCircuit, Play, Square, Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { GlassCard } from "@/components/shared/GlassCard";
 import { getActorHeaders } from "@/lib/actor-context";
@@ -55,6 +56,49 @@ async function blobToBase64(blob: Blob) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+function getYoutubeEmbedUrl(url: string) {
+  const value = String(url || "").trim();
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.hostname.includes("youtube.com")) {
+      const videoId = parsed.searchParams.get("v") || "";
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    if (parsed.hostname.includes("youtu.be")) {
+      const videoId = parsed.pathname.replace(/^\//, "").trim();
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getDemoType(url: string) {
+  const normalized = String(url || "").trim().toLowerCase();
+  if (!normalized) {
+    return "none" as const;
+  }
+
+  if (getYoutubeEmbedUrl(normalized)) {
+    return "youtube" as const;
+  }
+
+  if (/(\.mp4|\.webm|\.mov|\.m4v|\.ogg|\.ogv|\.m3u8)(\?.*)?$/.test(normalized)) {
+    return "video" as const;
+  }
+
+  if (/(\.gif|\.png|\.jpe?g|\.webp|\.avif|\.svg)(\?.*)?$/.test(normalized)) {
+    return "image" as const;
+  }
+
+  return "link" as const;
 }
 
 export default function ExerciseComponent() {
@@ -112,7 +156,10 @@ export default function ExerciseComponent() {
     retry: false,
   });
 
-  const prescriptionItems = Array.isArray(prescriptionsData?.items) ? prescriptionsData.items : [];
+  const prescriptionItems = useMemo(
+    () => (Array.isArray(prescriptionsData?.items) ? prescriptionsData.items : []),
+    [prescriptionsData],
+  );
 
   const selectedPrescription = useMemo(() => {
     if (queryPrescriptionId) {
@@ -152,6 +199,16 @@ export default function ExerciseComponent() {
     const fromPrescription = String((selectedPrescription as any)?.gifUrl || "").trim();
     return fromPrescription || null;
   }, [selectedExercise, selectedPrescription]);
+
+  const selectedExerciseDemoType = useMemo(
+    () => getDemoType(selectedExerciseGif || ""),
+    [selectedExerciseGif],
+  );
+
+  const selectedExerciseYouTubeEmbedUrl = useMemo(
+    () => getYoutubeEmbedUrl(selectedExerciseGif || ""),
+    [selectedExerciseGif],
+  );
 
   const finalReportSections = useMemo(() => parseAiReportSections(finalReport), [finalReport]);
 
@@ -523,7 +580,39 @@ export default function ExerciseComponent() {
             <GlassCard className="p-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Reference Exercise Demo</p>
               {selectedExerciseGif ? (
-                <img src={selectedExerciseGif} alt="Exercise demonstration" className="w-full h-44 rounded-lg object-cover border border-white/10" />
+                selectedExerciseDemoType === "youtube" && selectedExerciseYouTubeEmbedUrl ? (
+                  <iframe
+                    src={selectedExerciseYouTubeEmbedUrl}
+                    title="Exercise demonstration"
+                    className="w-full h-44 rounded-lg border border-white/10"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                ) : selectedExerciseDemoType === "video" ? (
+                  <video
+                    src={selectedExerciseGif}
+                    controls
+                    className="w-full h-44 rounded-lg object-cover border border-white/10"
+                  />
+                ) : selectedExerciseDemoType === "image" ? (
+                  <Image
+                    src={selectedExerciseGif}
+                    alt="Exercise demonstration"
+                    width={640}
+                    height={352}
+                    className="w-full h-44 rounded-lg object-cover border border-white/10"
+                  />
+                ) : (
+                  <a
+                    href={selectedExerciseGif}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex px-3 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold"
+                  >
+                    Open demo reference
+                  </a>
+                )
               ) : (
                 <p className="text-xs text-muted-foreground">Demo video will appear after ExerciseDB match is resolved.</p>
               )}

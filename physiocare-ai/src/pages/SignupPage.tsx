@@ -13,13 +13,106 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpVerificationToken, setOtpVerificationToken] = useState("");
+  const [otpMessage, setOtpMessage] = useState<string | null>(null);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+
+  const resetOtpState = () => {
+    setOtp("");
+    setOtpSent(false);
+    setOtpVerified(false);
+    setOtpVerificationToken("");
+    setOtpMessage(null);
+  };
+
+  const handleSendOtp = async () => {
+    setError(null);
+
+    if (!emailLooksValid) {
+      setOtpMessage("Enter a valid email first.");
+      return;
+    }
+
+    setSendingOtp(true);
+    setOtpMessage(null);
+
+    const response = await fetch("/api/auth/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    setSendingOtp(false);
+
+    if (!response.ok) {
+      setOtpMessage(payload?.error || "Failed to send OTP.");
+      return;
+    }
+
+    setOtpSent(true);
+    setOtpVerified(false);
+    setOtpVerificationToken("");
+    setOtpMessage("OTP sent to your email.");
+  };
+
+  const handleVerifyOtp = async () => {
+    setError(null);
+
+    if (!otpSent) {
+      setOtpMessage("Request OTP first.");
+      return;
+    }
+
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setOtpMessage("Enter valid 6-digit OTP.");
+      return;
+    }
+
+    setVerifyingOtp(true);
+    setOtpMessage(null);
+
+    const response = await fetch("/api/auth/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    setVerifyingOtp(false);
+
+    if (!response.ok) {
+      setOtpVerified(false);
+      setOtpVerificationToken("");
+      setOtpMessage(payload?.error || "Invalid OTP.");
+      return;
+    }
+
+    setOtpVerified(true);
+    setOtpVerificationToken(String(payload.verificationToken || ""));
+    setOtpMessage("Email verified successfully.");
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+
+    if (!otpVerified || !otpVerificationToken) {
+      setError("Please verify your email with OTP before signup.");
+      return;
+    }
+
     setLoading(true);
 
     const response = await fetch("/api/auth/signup", {
@@ -30,6 +123,7 @@ export default function SignupPage() {
         email,
         password,
         role: "PATIENT",
+        otpVerificationToken,
       }),
     });
 
@@ -94,10 +188,49 @@ export default function SignupPage() {
                 type="email"
                 placeholder="Email address"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary/50 border border-white/6 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                onChange={(event) => {
+                  const nextEmail = event.target.value;
+                  setEmail(nextEmail);
+                  if (otpSent || otpVerified || otpVerificationToken) {
+                    resetOtpState();
+                  }
+                }}
+                className="w-full pl-11 pr-30 py-3 rounded-xl bg-secondary/50 border border-white/6 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
               />
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={sendingOtp || !emailLooksValid}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold disabled:opacity-50"
+              >
+                {sendingOtp ? "Sending..." : otpSent ? "Resend OTP" : "Get OTP"}
+              </button>
             </div>
+
+            <div className="relative flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter 6-digit OTP"
+                value={otp}
+                onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                className="w-full pl-4 pr-4 py-3 rounded-xl bg-secondary/50 border border-white/6 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                disabled={!otpSent || otpVerified}
+              />
+              <button
+                type="button"
+                onClick={handleVerifyOtp}
+                disabled={!otpSent || otpVerified || verifyingOtp || otp.length !== 6}
+                className="px-3 py-2 rounded-xl bg-primary/15 text-primary text-xs font-semibold disabled:opacity-50"
+              >
+                {otpVerified ? "Verified" : verifyingOtp ? "Verifying..." : "Verify OTP"}
+              </button>
+            </div>
+
+            {otpMessage && (
+              <div className={`rounded-xl px-4 py-2 text-xs ${otpVerified ? "border border-success/30 bg-success/10 text-success" : "border border-white/10 bg-secondary/30 text-muted-foreground"}`}>
+                {otpMessage}
+              </div>
+            )}
 
             <div className="relative">
               <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -125,7 +258,7 @@ export default function SignupPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !otpVerified}
               className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl text-sm font-bold transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60"
             >
               {loading ? "Creating..." : "Create Account"} <ArrowRight size={16} />

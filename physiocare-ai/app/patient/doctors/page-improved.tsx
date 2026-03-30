@@ -103,7 +103,7 @@ export default async function PatientDoctorsPage() {
             <div className="patient-empty-icon">👨‍⚕️</div>
             <div className="patient-empty-title">No Doctors Available</div>
             <p className="patient-empty-subtitle">
-              Please check back soon. We're adding more physiotherapists to our platform.
+              Please check back soon. We&apos;re adding more physiotherapists to our platform.
             </p>
             <Link href="/patient" className="patient-btn patient-btn-primary">
               Back to Dashboard

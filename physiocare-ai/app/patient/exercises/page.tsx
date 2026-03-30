@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { GlassCard } from "@/components/shared/GlassCard";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { BookOpen, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 import { getActorHeaders } from "@/lib/actor-context";
 
 const PRESCRIPTIONS_CACHE_KEY = "physiocare_patient_prescriptions_cache";
@@ -33,6 +34,49 @@ function writePrescriptionCache(items: any[]) {
   } catch {
     return;
   }
+}
+
+function getYoutubeEmbedUrl(url: string) {
+  const value = String(url || "").trim();
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.hostname.includes("youtube.com")) {
+      const videoId = parsed.searchParams.get("v") || "";
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    if (parsed.hostname.includes("youtu.be")) {
+      const videoId = parsed.pathname.replace(/^\//, "").trim();
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getDemoType(url: string) {
+  const normalized = String(url || "").trim().toLowerCase();
+  if (!normalized) {
+    return "none" as const;
+  }
+
+  if (getYoutubeEmbedUrl(normalized)) {
+    return "youtube" as const;
+  }
+
+  if (/(\.mp4|\.webm|\.mov|\.m4v|\.ogg|\.ogv|\.m3u8)(\?.*)?$/.test(normalized)) {
+    return "video" as const;
+  }
+
+  if (/(\.gif|\.png|\.jpe?g|\.webp|\.avif|\.svg)(\?.*)?$/.test(normalized)) {
+    return "image" as const;
+  }
+
+  return "link" as const;
 }
 
 export default function PatientExercisesPage() {
@@ -100,12 +144,54 @@ export default function PatientExercisesPage() {
                         if (!demoUrl) {
                           return null;
                         }
+
+                        const demoType = getDemoType(demoUrl);
+                        const youtubeEmbedUrl = getYoutubeEmbedUrl(demoUrl);
+
+                        if (demoType === "youtube" && youtubeEmbedUrl) {
+                          return (
+                            <iframe
+                              src={youtubeEmbedUrl}
+                              title={`${exercise.name || "Exercise"} demo`}
+                              className="w-full h-40 rounded-lg border border-white/10 mb-3"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              referrerPolicy="strict-origin-when-cross-origin"
+                              allowFullScreen
+                            />
+                          );
+                        }
+
+                        if (demoType === "video") {
+                          return (
+                            <video
+                              src={demoUrl}
+                              controls
+                              className="w-full h-40 rounded-lg object-cover border border-white/10 mb-3"
+                            />
+                          );
+                        }
+
+                        if (demoType === "image") {
+                          return (
+                            <Image
+                              src={demoUrl}
+                              alt={`${exercise.name || "Exercise"} demo`}
+                              width={640}
+                              height={320}
+                              className="w-full h-40 rounded-lg object-cover border border-white/10 mb-3"
+                            />
+                          );
+                        }
+
                         return (
-                          <img
-                            src={demoUrl}
-                            alt={`${exercise.name || "Exercise"} demo`}
-                            className="w-full h-40 rounded-lg object-cover border border-white/10 mb-3"
-                          />
+                          <a
+                            href={demoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex mb-3 px-3 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold"
+                          >
+                            Open Demo Reference
+                          </a>
                         );
                       })()}
 

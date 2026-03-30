@@ -3,9 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { resolveActorFromRequest } from "@/lib/actor-context";
 
-function extractFirstUrl(text: string) {
-  const match = text.match(/https?:\/\/\S+/i)?.[0] || "";
-  return match.replace(/[),.;]+$/, "").trim() || null;
+function cleanExtractedUrl(url: string) {
+  return String(url || "").replace(/[),.;]+$/, "").trim() || null;
+}
+
+function extractDemoUrl(text: string) {
+  const demoMatch = text.match(/demo\s*:\s*(https?:\/\/\S+)/i)?.[1] || "";
+  const cleanedDemoUrl = cleanExtractedUrl(demoMatch);
+  if (cleanedDemoUrl) {
+    return cleanedDemoUrl;
+  }
+
+  const firstUrl = text.match(/https?:\/\/\S+/i)?.[0] || "";
+  return cleanExtractedUrl(firstUrl);
 }
 
 export async function GET(request: Request) {
@@ -30,7 +40,7 @@ export async function GET(request: Request) {
   const items = prescriptions.map((prescription) => ({
     ...prescription,
     exercises: (prescription.exercises || []).map((exercise) => {
-      const fromNotes = extractFirstUrl(String(exercise.notes || ""));
+      const fromNotes = extractDemoUrl(String(exercise.notes || ""));
       return {
         ...exercise,
         demoUrl: fromNotes || prescription.gifUrl || null,

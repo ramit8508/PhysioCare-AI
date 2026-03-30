@@ -16,6 +16,8 @@ export const authOptions: NextAuthOptions = {
         const email = credentials?.email?.toString().toLowerCase() || "";
         const password = credentials?.password?.toString() || "";
         const role = credentials?.role?.toString().toUpperCase() || "";
+        const demoEmail = String(process.env.DEMO_PATIENT_EMAIL || "demo@physiocare.ai").trim().toLowerCase();
+        const demoPassword = String(process.env.DEMO_PATIENT_PASSWORD || "demo123");
 
         if (!email || !password) {
           return null;
@@ -31,6 +33,19 @@ export const authOptions: NextAuthOptions = {
             id: "static-admin",
             email: "admin@gmail.com",
             role: "ADMIN",
+            isBlacklisted: false,
+          } as any;
+        }
+
+        if (email === demoEmail && password === demoPassword) {
+          if (role && role !== "PATIENT") {
+            return null;
+          }
+
+          return {
+            id: String(process.env.DEMO_PATIENT_ID || "64b8f7b2c9d4e1a2b3c4d5e6"),
+            email: demoEmail,
+            role: "PATIENT",
             isBlacklisted: false,
           } as any;
         }
