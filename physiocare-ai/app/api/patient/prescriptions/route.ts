@@ -18,6 +18,15 @@ function extractDemoUrl(text: string) {
   return cleanExtractedUrl(firstUrl);
 }
 
+function buildDemoSearchUrl(exerciseName: string) {
+  const normalizedName = String(exerciseName || "").trim();
+  if (!normalizedName) {
+    return null;
+  }
+  const query = `${normalizedName} exercise demo`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+}
+
 export async function GET(request: Request) {
   const session = await getSession();
   const actor = resolveActorFromRequest(request, session?.user as any, "PATIENT");
@@ -41,9 +50,10 @@ export async function GET(request: Request) {
     ...prescription,
     exercises: (prescription.exercises || []).map((exercise) => {
       const fromNotes = extractDemoUrl(String(exercise.notes || ""));
+      const fallbackSearchUrl = buildDemoSearchUrl(String(exercise.name || ""));
       return {
         ...exercise,
-        demoUrl: fromNotes || prescription.gifUrl || null,
+        demoUrl: fromNotes || prescription.gifUrl || fallbackSearchUrl || null,
       };
     }),
   }));
