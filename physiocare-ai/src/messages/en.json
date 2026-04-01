@@ -1,0 +1,36 @@
+{
+  "exercise": {
+    "backToExercises": "Back to Exercises",
+    "liveSession": "LIVE SESSION",
+    "ready": "READY",
+    "repetitions": "Repetitions",
+    "accuracy": "Accuracy",
+    "liveFormFeedback": "Live Form Feedback",
+    "startToReceiveCorrections": "Start a session to receive real-time corrections.",
+    "maxAngle": "Max Angle",
+    "referenceDemo": "Reference Exercise Demo",
+    "openDemoReference": "Open demo reference",
+    "demoPending": "Demo video will appear after ExerciseDB match is resolved.",
+    "clinicalNotes": "Clinical Notes",
+    "aiAnalysis": "AI Analysis",
+    "generatingReport": "Generating Report...",
+    "groqFinalReport": "Groq Final Report",
+    "noDetails": "No details available.",
+    "sessionSaved": "Session saved successfully",
+    "startExercise": "Start Exercise",
+    "stopAndGenerate": "Stop & Generate Report",
+    "timelineEnded": "Timeline Ended",
+    "targetExercise": "Target exercise",
+    "noExerciseSelected": "No exercise selected",
+    "language": "Language",
+    "accessibility": "Accessibility",
+    "lowVision": "Low Vision Mode",
+    "haptic": "Haptic feedback on incorrect form"
+    ,"pauseExercise": "Pause Exercise"
+    ,"resumeExercise": "Resume Exercise"
+    ,"voiceControl": "Voice control (pause/resume/stop)"
+    ,"voiceListeningActive": "Voice command listening is active."
+    ,"voiceListeningIdle": "Voice command listening is idle."
+    ,"voiceHint": "Say: \"pause exercise\", \"resume\", or \"stop exercise\"."
+  }
+}

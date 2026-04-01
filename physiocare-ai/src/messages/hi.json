@@ -1,0 +1,36 @@
+{
+  "exercise": {
+    "backToExercises": "व्यायाम सूची पर वापस जाएँ",
+    "liveSession": "लाइव सेशन",
+    "ready": "तैयार",
+    "repetitions": "दोहराव",
+    "accuracy": "सटीकता",
+    "liveFormFeedback": "लाइव फ़ॉर्म फ़ीडबैक",
+    "startToReceiveCorrections": "रियल-टाइम सुधार पाने के लिए सेशन शुरू करें।",
+    "maxAngle": "अधिकतम कोण",
+    "referenceDemo": "रेफरेंस डेमो",
+    "openDemoReference": "डेमो देखें",
+    "demoPending": "ExerciseDB मैच होने के बाद डेमो दिखेगा।",
+    "clinicalNotes": "क्लिनिकल नोट्स",
+    "aiAnalysis": "एआई विश्लेषण",
+    "generatingReport": "रिपोर्ट बन रही है...",
+    "groqFinalReport": "Groq अंतिम रिपोर्ट",
+    "noDetails": "कोई विवरण उपलब्ध नहीं है।",
+    "sessionSaved": "सेशन सफलतापूर्वक सेव हुआ",
+    "startExercise": "व्यायाम शुरू करें",
+    "stopAndGenerate": "रोकें और रिपोर्ट बनाएँ",
+    "timelineEnded": "समयरेखा समाप्त",
+    "targetExercise": "लक्षित व्यायाम",
+    "noExerciseSelected": "कोई व्यायाम चयनित नहीं",
+    "language": "भाषा",
+    "accessibility": "सुगम्यता",
+    "lowVision": "लो विज़न मोड",
+    "haptic": "गलत फ़ॉर्म पर फोन वाइब्रेशन"
+    ,"pauseExercise": "व्यायाम रोकें"
+    ,"resumeExercise": "व्यायाम फिर शुरू करें"
+    ,"voiceControl": "वॉइस कंट्रोल (रोकें/फिर शुरू/बंद करें)"
+    ,"voiceListeningActive": "वॉइस कमांड सुनना सक्रिय है।"
+    ,"voiceListeningIdle": "वॉइस कमांड सुनना बंद है।"
+    ,"voiceHint": "कहें: \"pause exercise\", \"resume\", या \"stop exercise\"।"
+  }
+}

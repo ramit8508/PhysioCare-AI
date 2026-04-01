@@ -16,6 +16,7 @@ export default function DoctorAppointmentsPage() {
   const [endAt, setEndAt] = useState("");
   const [savingSlot, setSavingSlot] = useState(false);
   const [prescriptionForAppointment, setPrescriptionForAppointment] = useState<string | null>(null);
+  const [timelineDays, setTimelineDays] = useState(14);
   const [prescribedExercises, setPrescribedExercises] = useState<Array<{ name: string; reps: number }>>([
     { name: "", reps: 10 },
   ]);
@@ -62,6 +63,20 @@ export default function DoctorAppointmentsPage() {
   });
 
   const sessions = Array.isArray(sessionsData?.items) ? sessionsData.items : [];
+
+  const { data: directRequestsData, refetch: refetchDirectRequests } = useQuery({
+    queryKey: ["doctor-appointment-requests"],
+    queryFn: async () => {
+      const response = await fetch("/api/doctor/appointment-requests", { headers: getActorHeaders("DOCTOR") });
+      if (!response.ok) {
+        return { items: [] };
+      }
+      return response.json();
+    },
+    enabled: status !== "loading",
+  });
+
+  const directRequests = Array.isArray(directRequestsData?.items) ? directRequestsData.items : [];
 
   const appointmentStatusChip = (statusValue: string) => {
     if (statusValue === "PENDING") {
@@ -129,6 +144,24 @@ export default function DoctorAppointmentsPage() {
     await Promise.all([refetchAppointments(), refetchSlots()]);
   };
 
+  const approveDirectRequest = async (requestId: string) => {
+    await fetch("/api/doctor/appointment-requests/approve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getActorHeaders("DOCTOR") },
+      body: JSON.stringify({ requestId }),
+    });
+    await refetchDirectRequests();
+  };
+
+  const declineDirectRequest = async (requestId: string) => {
+    await fetch("/api/doctor/appointment-requests/decline", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getActorHeaders("DOCTOR") },
+      body: JSON.stringify({ requestId }),
+    });
+    await refetchDirectRequests();
+  };
+
   const submitPrescription = async (appointment: any) => {
     const cleanedExercises = prescribedExercises
       .map((exercise) => ({
@@ -152,10 +185,12 @@ export default function DoctorAppointmentsPage() {
           sets: 3,
           reps: exercise.reps,
         })),
+        timelineDays,
       }),
     });
 
     setPrescriptionForAppointment(null);
+    setTimelineDays(14);
     setPrescribedExercises([{ name: "", reps: 10 }]);
     await refetchAppointments();
   };
@@ -257,6 +292,61 @@ export default function DoctorAppointmentsPage() {
 
         <GlassCard className="p-5 space-y-3">
           <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground">Direct Requests (No Slot)</p>
+            <span className="text-xs text-muted-foreground">{directRequests.length} total</span>
+          </div>
+          {directRequests.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No direct requests yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {directRequests.map((request: any) => (
+                <div key={request.id} className="rounded-2xl border border-white/8 bg-linear-to-b from-slate-800/40 to-slate-900/40 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground">{request.patientName || request.patientEmail}</p>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${appointmentStatusChip(request.status)}`}>
+                      {request.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">{request.summary}</p>
+                  {request.preferredAt && (
+                    <p className="text-xs text-muted-foreground">Preferred: {new Date(request.preferredAt).toLocaleString()}</p>
+                  )}
+
+                  {request.status === "PENDING" && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => approveDirectRequest(request.id)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
+                      >
+                        <CheckCircle2 size={12} /> Approve Request
+                      </button>
+                      <button
+                        onClick={() => declineDirectRequest(request.id)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-destructive/20 text-destructive text-xs font-semibold"
+                      >
+                        <XCircle size={12} /> Decline
+                      </button>
+                    </div>
+                  )}
+
+                  {request.status === "APPROVED" && request.meetingUrl && (
+                    <a
+                      href={`${request.meetingUrl}${String(request.meetingUrl).includes("?") ? "&" : "?"}actor=DOCTOR`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
+                    >
+                      Join Approved Call
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </GlassCard>
+
+        <GlassCard className="p-5 space-y-3">
+          <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">Patient Appointments</p>
             <span className="text-xs text-muted-foreground">{appointments.length} bookings</span>
           </div>
@@ -327,6 +417,14 @@ export default function DoctorAppointmentsPage() {
                   {Array.isArray(appointment.prescriptionExercises) && appointment.prescriptionExercises.length > 0 && (
                     <div className="rounded-xl border border-white/6 p-3 space-y-2">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Prescribed Exercises</p>
+                      {appointment.prescriptionTimelineDays ? (
+                        <p className="text-xs text-muted-foreground">
+                          Timeline: {appointment.prescriptionTimelineDays} day(s)
+                          {appointment.prescriptionActiveUntil
+                            ? ` · Active until ${new Date(appointment.prescriptionActiveUntil).toLocaleDateString()}`
+                            : ""}
+                        </p>
+                      ) : null}
                       {appointment.prescriptionExercises.map((exercise: any) => (
                         <div key={exercise.id} className="text-xs text-muted-foreground">
                           <span className="text-foreground font-semibold">{exercise.name}</span> · {exercise.sets} sets · {exercise.reps} reps
@@ -337,6 +435,21 @@ export default function DoctorAppointmentsPage() {
 
                   {prescriptionForAppointment === appointment.id && (
                     <div className="space-y-2 rounded-xl border border-white/8 bg-secondary/20 p-3">
+                      <div className="grid grid-cols-[1fr_180px] gap-2">
+                        <div className="rounded-lg bg-secondary/30 border border-white/8 px-3 py-2 text-xs text-muted-foreground">
+                          Prescription timeline controls how long exercises stay active for the patient.
+                        </div>
+                        <input
+                          type="number"
+                          min={1}
+                          max={365}
+                          value={timelineDays}
+                          onChange={(event) => setTimelineDays(Math.max(1, Math.min(365, Number(event.target.value || 1))))}
+                          placeholder="Timeline (days)"
+                          className="w-full rounded-lg bg-secondary/50 border border-white/6 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                      </div>
+
                       {prescribedExercises.map((exercise, index) => (
                         <div key={`exercise-row-${index}`} className="grid grid-cols-[1fr_140px_110px] gap-2">
                           <input

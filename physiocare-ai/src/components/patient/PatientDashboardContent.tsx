@@ -3,7 +3,7 @@
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { GlassCard } from "@/components/shared/GlassCard";
 import { StaggerContainer, StaggerItem } from "@/components/shared/StaggerChildren";
-import { Play, CalendarDays, TrendingUp, Stethoscope, Clock3, BadgeCheck, ArrowRight, Activity, Zap, CheckCircle2, AlertCircle } from "lucide-react";
+import { Play, CalendarDays, TrendingUp, Stethoscope, Clock3, BadgeCheck, ArrowRight, Activity, Zap, CheckCircle2, AlertCircle, Flame, Footprints } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
@@ -17,6 +17,19 @@ export default function PatientDashboardContent() {
     queryKey: ["patient-summary"],
     queryFn: async () => {
       const response = await fetch("/api/patient/summary", { headers: getActorHeaders("PATIENT") });
+      if (!response.ok) {
+        return null;
+      }
+      return response.json();
+    },
+    enabled: status !== "loading",
+    retry: false,
+  });
+
+  const { data: performanceData } = useQuery({
+    queryKey: ["patient-performance-prediction"],
+    queryFn: async () => {
+      const response = await fetch("/api/patient/performance", { headers: getActorHeaders("PATIENT") });
       if (!response.ok) {
         return null;
       }
@@ -54,6 +67,16 @@ export default function PatientDashboardContent() {
   const patientName = session?.user?.name || "Patient";
   const completedToday = exercises.filter((exercise) => exercise.status === "completed").length;
   const completionPercent = exercises.length ? Math.round((completedToday / exercises.length) * 100) : 0;
+  const streakDays = Math.max(0, consecutiveDays);
+  const journeyProgress = Math.max(0, Math.min(100, Math.round((sessionsThisWeek / Math.max(1, sessionsWeeklyTarget)) * 100)));
+  const journeyMilestones = [0, 20, 40, 60, 80, 100];
+  const prediction = performanceData?.prediction || {
+    targetMobilityPercent: 90,
+    estimatedDaysToTarget: 0,
+    onTrack: false,
+    confidence: "low",
+    reasoning: "Not enough session data yet. Complete a few sessions to enable prediction.",
+  };
 
   const nextSessionLabel = (() => {
     if (isDemoPatient && nextSession?.demoTimeLabel) {
@@ -178,6 +201,78 @@ export default function PatientDashboardContent() {
                   </motion.div>
                 );
               })}
+            </div>
+          </StaggerItem>
+
+          <StaggerItem>
+            <div className="glass-card p-6 md:p-7 bg-linear-to-r from-primary/10 via-cyan-500/5 to-transparent border border-primary/15">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-2">Recovery Forecast</p>
+                  {prediction.estimatedDaysToTarget > 0 ? (
+                    <p className="text-lg text-foreground">
+                      You are <span className="font-semibold text-primary">{prediction.onTrack ? "on track" : "currently behind target"}</span> to reach{" "}
+                      <span className="font-semibold">{prediction.targetMobilityPercent}% mobility</span> in about{" "}
+                      <span className="font-semibold text-primary">{prediction.estimatedDaysToTarget} day(s)</span>.
+                    </p>
+                  ) : (
+                    <p className="text-lg text-foreground">{prediction.reasoning}</p>
+                  )}
+                </div>
+                <div className="rounded-xl border border-white/10 bg-secondary/30 px-4 py-3 shrink-0">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Confidence</p>
+                  <p className="text-sm font-bold text-foreground uppercase">{String(prediction.confidence || "low")}</p>
+                </div>
+              </div>
+              {prediction.estimatedDaysToTarget > 0 ? (
+                <p className="text-xs text-muted-foreground mt-3">{prediction.reasoning}</p>
+              ) : null}
+            </div>
+          </StaggerItem>
+
+          <StaggerItem>
+            <div className="glass-card p-6 md:p-7">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">Rehab Journey</h2>
+                  <p className="text-sm text-muted-foreground">Stay consistent and keep your streak alive.</p>
+                </div>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/15 text-orange-400 text-sm font-semibold">
+                  <Flame size={16} /> {streakDays} day streak
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/8 bg-secondary/20 p-4">
+                <div className="relative h-20">
+                  <div className="absolute left-0 right-0 top-9 h-2 rounded-full bg-secondary/70" />
+                  <div className="absolute left-0 top-9 h-2 rounded-full bg-primary" style={{ width: `${journeyProgress}%` }} />
+
+                  {journeyMilestones.map((milestone) => (
+                    <div
+                      key={milestone}
+                      className={`absolute top-7 -ml-2.5 h-5 w-5 rounded-full border ${journeyProgress >= milestone ? "bg-primary border-primary" : "bg-secondary/80 border-white/20"}`}
+                      style={{ left: `${milestone}%` }}
+                    />
+                  ))}
+
+                  <motion.div
+                    initial={{ left: "0%" }}
+                    animate={{ left: `${journeyProgress}%` }}
+                    transition={{ duration: 0.9, ease: "easeOut" }}
+                    className="absolute top-1 -ml-3"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center shadow-lg">
+                      <Footprints size={16} />
+                    </div>
+                  </motion.div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground mt-3">
+                  <span>Start</span>
+                  <span>{sessionsThisWeek}/{sessionsWeeklyTarget} weekly sessions</span>
+                  <span>Goal</span>
+                </div>
+              </div>
             </div>
           </StaggerItem>
 

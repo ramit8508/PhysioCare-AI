@@ -8,6 +8,8 @@ import { Loader2 } from "lucide-react";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { getActorContext } from "@/lib/actor-context";
 
+const LOW_BANDWIDTH_MODE_KEY = "physiocare_low_bandwidth_mode";
+
 async function blobToBase64(blob: Blob) {
   return await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -30,6 +32,42 @@ export default function MeetPage() {
   const [recording, setRecording] = useState(false);
   const [saving, setSaving] = useState(false);
   const [recordMsg, setRecordMsg] = useState("");
+  const [lowBandwidthMode, setLowBandwidthMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const fromQuery = searchParams?.get("lowBandwidth");
+    if (fromQuery === "1") {
+      setLowBandwidthMode(true);
+      try {
+        window.localStorage.setItem(LOW_BANDWIDTH_MODE_KEY, "1");
+      } catch {
+        return;
+      }
+      return;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(LOW_BANDWIDTH_MODE_KEY);
+      setLowBandwidthMode(stored === "1");
+    } catch {
+      setLowBandwidthMode(false);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    try {
+      window.localStorage.setItem(LOW_BANDWIDTH_MODE_KEY, lowBandwidthMode ? "1" : "0");
+    } catch {
+      return;
+    }
+  }, [lowBandwidthMode]);
 
   useEffect(() => {
     const actorParam = (searchParams?.get("actor") || "").toUpperCase();
@@ -162,6 +200,12 @@ export default function MeetPage() {
     <div className="w-screen h-screen bg-slate-950">
       <div className="absolute z-50 top-4 left-4 right-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setLowBandwidthMode((prev) => !prev)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${lowBandwidthMode ? "bg-primary text-primary-foreground" : "bg-white/15 text-white"}`}
+          >
+            Low Bandwidth {lowBandwidthMode ? "ON" : "OFF"}
+          </button>
           {!recording ? (
             <button
               onClick={startRecording}
@@ -183,6 +227,11 @@ export default function MeetPage() {
         {recordMsg && (
           <p className="text-xs text-white/90 bg-black/40 px-3 py-1.5 rounded-lg">{recordMsg}</p>
         )}
+        {!recordMsg && (
+          <p className="text-xs text-white/90 bg-black/40 px-3 py-1.5 rounded-lg">
+            {lowBandwidthMode ? "Audio-first mode with lower video quality for weak networks." : "Standard video mode."}
+          </p>
+        )}
       </div>
       <ErrorBoundary
         fallback={
@@ -196,6 +245,7 @@ export default function MeetPage() {
           userId={zegoIdentity.id}
           userName={zegoIdentity.name}
           fullScreen
+          lowBandwidthMode={lowBandwidthMode}
         />
       </ErrorBoundary>
     </div>

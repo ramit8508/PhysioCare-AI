@@ -19,6 +19,13 @@ type PerformancePayload = {
   };
   chart: Array<{ day: string; score: number }>;
   combinedReport: string;
+  prediction: {
+    targetMobilityPercent: number;
+    estimatedDaysToTarget: number;
+    onTrack: boolean;
+    confidence: "low" | "medium" | "high";
+    reasoning: string;
+  };
 };
 
 const defaultPayload: PerformancePayload = {
@@ -31,6 +38,13 @@ const defaultPayload: PerformancePayload = {
   },
   chart: [],
   combinedReport: "No session data yet. Complete an exercise to generate your AI performance report.",
+  prediction: {
+    targetMobilityPercent: 90,
+    estimatedDaysToTarget: 0,
+    onTrack: false,
+    confidence: "low",
+    reasoning: "Not enough session data yet. Complete a few sessions to enable prediction.",
+  },
 };
 
 export default function PerformancePage() {
@@ -145,6 +159,31 @@ export default function PerformancePage() {
               </div>
             </GlassCard>
           </StaggerItem>
+          <StaggerItem className="col-span-12">
+            <GlassCard className="p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-3">Predictive Recovery Timeline</h3>
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Calculating prediction...</p>
+              ) : payload.prediction.estimatedDaysToTarget <= 0 ? (
+                <p className="text-sm text-muted-foreground">{payload.prediction.reasoning}</p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-white/8 bg-secondary/20 p-4">
+                    <p className="text-sm text-foreground">
+                      You are {payload.prediction.onTrack ? "on track" : "currently behind target"} to reach{" "}
+                      <span className="font-semibold text-primary">{payload.prediction.targetMobilityPercent}% mobility</span> in about{" "}
+                      <span className="font-semibold text-primary">{payload.prediction.estimatedDaysToTarget} day(s)</span>.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Confidence: <span className="text-foreground font-semibold uppercase">{payload.prediction.confidence}</span>
+                    </p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{payload.prediction.reasoning}</p>
+                </div>
+              )}
+            </GlassCard>
+          </StaggerItem>
+
           <StaggerItem className="col-span-12">
             <GlassCard className="p-6">
               <h3 className="text-lg font-semibold text-foreground mb-3">Combined AI Rehab Report</h3>

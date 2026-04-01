@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { GlassCard } from "@/components/shared/GlassCard";
 import {
@@ -13,17 +14,85 @@ import {
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useAppointments } from "@/hooks/useAppointments";
+import { getActorHeaders } from "@/lib/actor-context";
 import { useSession } from "next-auth/react";
 import { CalendarClock, CircleCheck, Clock3, Stethoscope, UserRound } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 export default function PatientAppointmentsPage() {
   const { status } = useSession();
+  const searchParams = useSearchParams();
+  const followUpDoctorId = searchParams?.get("doctorId") || "";
+  const followUpPrescriptionId = searchParams?.get("followUpPrescriptionId") || "";
 
   const [activeDoctor, setActiveDoctor] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedSlotId, setSelectedSlotId] = useState<string>("");
+  const [didAutoOpenFollowUp, setDidAutoOpenFollowUp] = useState(false);
+  const [requestDoctor, setRequestDoctor] = useState<any | null>(null);
+  const [requestSummary, setRequestSummary] = useState("");
+  const [requestPreferredAt, setRequestPreferredAt] = useState("");
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const { appointments, doctors, slots, isBooking, bookingError, bookSlot } = useAppointments(activeDoctor?.id);
+
+  const { data: requestData, refetch: refetchRequests } = useQuery({
+    queryKey: ["patient-appointment-requests"],
+    queryFn: async () => {
+      const response = await fetch("/api/patient/appointment-requests", { headers: getActorHeaders("PATIENT") });
+      if (!response.ok) {
+        return { items: [] };
+      }
+      return response.json();
+    },
+    enabled: status !== "loading",
+  });
+
+  const createRequestMutation = useMutation({
+    mutationFn: async () => {
+      if (!requestDoctor?.id || !requestSummary.trim()) {
+        throw new Error("Doctor and summary are required");
+      }
+
+      const response = await fetch("/api/patient/appointment-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getActorHeaders("PATIENT") },
+        body: JSON.stringify({
+          doctorId: requestDoctor.id,
+          summary: requestSummary,
+          preferredAt: requestPreferredAt || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || "Unable to submit request");
+      }
+
+      return response.json();
+    },
+    onSuccess: async () => {
+      setRequestDialogOpen(false);
+      setRequestSummary("");
+      setRequestPreferredAt("");
+      setRequestDoctor(null);
+      await refetchRequests();
+    },
+  });
+
+  const appointmentRequests = Array.isArray(requestData?.items) ? requestData.items : [];
+
+  useEffect(() => {
+    if (!followUpDoctorId || didAutoOpenFollowUp || doctors.length === 0) {
+      return;
+    }
+
+    const matched = doctors.find((doctor: any) => String(doctor.id) === String(followUpDoctorId));
+    if (matched) {
+      openBookingDialog(matched);
+      setDidAutoOpenFollowUp(true);
+    }
+  }, [followUpDoctorId, didAutoOpenFollowUp, doctors]);
 
   const availableSlots = useMemo(() => {
     if (!selectedDate) {
@@ -47,13 +116,20 @@ export default function PatientAppointmentsPage() {
     setOpen(true);
   };
 
+  const openRequestDialog = (doctor: any) => {
+    setRequestDoctor(doctor);
+    setRequestSummary("");
+    setRequestPreferredAt("");
+    setRequestDialogOpen(true);
+  };
+
   const requestAppointment = async () => {
     if (!selectedSlotId) {
       return;
     }
 
     try {
-      await bookSlot(selectedSlotId);
+      await bookSlot(selectedSlotId, followUpPrescriptionId || undefined);
       setOpen(false);
       setSelectedSlotId("");
     } catch {
@@ -151,6 +227,49 @@ export default function PatientAppointmentsPage() {
                   >
                     Request Appointment
                   </button>
+                  <button
+                    onClick={() => openRequestDialog(doctor)}
+                    className="w-full rounded-xl bg-secondary text-foreground text-xs font-semibold py-2.5 border border-white/10"
+                  >
+                    Request Without Slot
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </GlassCard>
+
+        <GlassCard className="p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground">Direct Appointment Requests</p>
+            <span className="text-xs text-muted-foreground">{appointmentRequests.length} total</span>
+          </div>
+          {appointmentRequests.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No direct requests yet.</p>
+          ) : (
+            <div className="grid gap-3">
+              {appointmentRequests.map((request: any) => (
+                <div key={request.id} className="rounded-2xl border border-white/8 bg-linear-to-b from-slate-800/40 to-slate-900/40 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground">{request.doctorName || request.doctorEmail}</p>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusPillClass(request.status)}`}>
+                      {request.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">{request.summary}</p>
+                  {request.preferredAt && (
+                    <p className="text-xs text-muted-foreground">Preferred: {new Date(request.preferredAt).toLocaleString()}</p>
+                  )}
+                  {request.status === "APPROVED" && request.meetingUrl && (
+                    <a
+                      href={`${request.meetingUrl}${String(request.meetingUrl).includes("?") ? "&" : "?"}actor=PATIENT`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 text-emerald-950 text-xs font-semibold"
+                    >
+                      <CircleCheck size={12} /> Join Approved Call
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
@@ -216,7 +335,9 @@ export default function PatientAppointmentsPage() {
             <DialogHeader>
               <DialogTitle>Request Appointment</DialogTitle>
               <DialogDescription>
-                {activeDoctor ? `Choose a date and slot for ${activeDoctor.fullName || activeDoctor.email}.` : "Choose a date and slot."}
+                {activeDoctor
+                  ? `Choose a date and slot for ${activeDoctor.fullName || activeDoctor.email}.${followUpPrescriptionId ? " Follow-up booking requires completed exercises and same doctor." : ""}`
+                  : "Choose a date and slot."}
               </DialogDescription>
             </DialogHeader>
 
@@ -278,6 +399,49 @@ export default function PatientAppointmentsPage() {
                 className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-60"
               >
                 {isBooking ? "Submitting..." : "Submit Request"}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
+          <DialogContent className="sm:max-w-xl border-white/15 bg-slate-950/95">
+            <DialogHeader>
+              <DialogTitle>Request Appointment Without Slot</DialogTitle>
+              <DialogDescription>
+                {requestDoctor
+                  ? `Send a direct request to ${requestDoctor.fullName || requestDoctor.email}. The doctor can approve and share a meeting link.`
+                  : "Send direct appointment request."}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3">
+              <textarea
+                value={requestSummary}
+                onChange={(event) => setRequestSummary(event.target.value)}
+                placeholder="Write a short summary for doctor (symptoms/progress/reason for appointment)"
+                className="w-full min-h-28 rounded-lg bg-secondary/40 border border-white/10 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+              />
+
+              <input
+                type="datetime-local"
+                value={requestPreferredAt}
+                onChange={(event) => setRequestPreferredAt(event.target.value)}
+                className="rounded-lg bg-secondary/40 border border-white/10 px-3 py-2 text-sm"
+              />
+            </div>
+
+            {createRequestMutation.error instanceof Error && (
+              <p className="text-xs text-destructive">{createRequestMutation.error.message}</p>
+            )}
+
+            <DialogFooter>
+              <button
+                onClick={() => createRequestMutation.mutate()}
+                disabled={!requestSummary.trim() || createRequestMutation.isPending}
+                className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-60"
+              >
+                {createRequestMutation.isPending ? "Submitting..." : "Send Request"}
               </button>
             </DialogFooter>
           </DialogContent>

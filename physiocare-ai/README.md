@@ -1,15 +1,63 @@
-# NeuroCareAI - AI-Powered Physiotherapy Platform
+# PhysioCare AI - AI-Powered Physiotherapy Platform
 
-A comprehensive Next.js 14 application for multi-role healthcare experiences with real-time telehealth sessions, AI-powered exercise guidance, and progress tracking.
+PhysioCare AI is a full-stack Next.js 14 platform for physiotherapy telehealth. It connects patients and doctors through live video sessions, AI-guided exercise tracking, and progress analytics with role-based access control.
 
-## Features
+> Workspace-level overview is available at `../README.md`.
 
-- **Multi-Role System**: Patient, Doctor, and Admin dashboards
-- **Real-Time Telehealth**: Video consultations using ZegoCloud
-- **AI Exercise Analysis**: Pose detection with MediaPipe + AI reports via Groq
-- **Smart Scheduling**: Doctor slot management and appointment booking
-- **Progress Tracking**: Visual analytics and performance metrics
-- **Secure Authentication**: NextAuth with role-based access control
+## What is Included
+
+- **Multi-role experience**: Patient, Doctor, and Admin portals with role-based routing and permissions.
+- **Telehealth video**: Live sessions using ZegoCloud with meeting tokens generated on demand.
+- **AI exercise analysis**: MediaPipe Pose for joint tracking and Groq for clinical summary reports.
+- **Smart Assistant (voice-first)**: Patients can speak symptoms during sets and receive instant Groq-powered modification guidance.
+- **Low Bandwidth Mode**: Optimized camera/sampling for weak rural networks and low-end phones (exercise + telehealth).
+- **Scheduling system**: Doctor availability slots, appointment requests, approvals, and meeting links.
+- **Exercise prescriptions**: Search, assign, and track physiotherapy exercises.
+- **Progress analytics**: Session history, charts, and performance metrics.
+- **Secure auth**: NextAuth with hashed passwords and server-side session validation.
+- **Uploads**: Patient exercise recordings stored in Cloudinary.
+- **UX improvements**: Toast notifications, empty states, and loading states for all major flows.
+
+## How Core Features Work
+
+### Telehealth Sessions (ZegoCloud)
+1. Doctor approves an appointment.
+2. The API generates a meeting token for both parties.
+3. Patient and doctor join the same room via the meeting link.
+4. Optional **Low Bandwidth Mode** starts audio-first and lowers video resolution to reduce data usage.
+5. ZegoCloud handles video/audio; the app manages roles and session state.
+
+### AI Exercise Analysis (MediaPipe + Groq)
+1. Patient starts an exercise session from their dashboard.
+2. MediaPipe Pose runs in the browser to detect joints and movement.
+3. Reps and form quality are tracked locally.
+4. A summary payload is sent to the server and stored.
+5. Groq generates a clinical report that the doctor can review.
+
+### Smart Assistant (Voice-First)
+1. Patient taps **Start Voice** inside live exercise mode.
+2. Browser speech recognition captures voice input (Web Speech API).
+3. The transcript is sent to `/api/patient/voice-assistant`.
+4. Groq returns immediate coaching advice (reduce range, slow tempo, pause set, etc.).
+5. If risk is detected, the concern is automatically flagged for doctor review.
+6. The doctor sees the flagged alert in existing Reports/Session Review flow.
+
+### Scheduling and Appointments
+1. Doctors publish availability slots.
+2. Patients book a slot; the request is marked pending.
+3. Doctor accepts or declines.
+4. On acceptance, a meeting URL is generated and stored.
+
+### Exercise Prescription Flow
+1. Doctor searches exercises (ExerciseDB or fallback data).
+2. Selected exercises are assigned to the patient.
+3. Patient completes the routine with AI tracking.
+4. Results and videos are saved for review.
+
+### Progress Tracking
+1. Each session writes metrics (reps, accuracy, duration).
+2. Dashboards compute trends and show charts.
+3. Doctors can review patient history and AI reports.
 
 ## Tech Stack
 
@@ -19,156 +67,128 @@ A comprehensive Next.js 14 application for multi-role healthcare experiences wit
 - **Auth**: NextAuth.js
 - **Video**: ZegoCloud UIKit
 - **AI/ML**: MediaPipe Pose, Groq LLM
-- **Storage**: Cloudinary (video uploads)
+- **Voice**: Web Speech API (speech-to-text) + SpeechSynthesis (text-to-speech)
+- **Storage**: Cloudinary
 - **Charts**: Recharts
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- MongoDB database (local or cloud)
-- ZegoCloud account
-- Cloudinary account
-- Groq API key
-
-### Installation
-
-1. **Clone and install dependencies**
-   ```bash
-   cd physiocare-ai
-   npm install
-   ```
-
-2. **Set up environment variables**
-
-   Copy `.env.example` to `.env` and fill in your credentials:
-   ```bash
-   cp .env.example .env
-   ```
-
-   Required variables:
-   - `MONGO_URL`: Your MongoDB connection string
-   - `NEXTAUTH_SECRET`: Generate with `openssl rand -base64 32`
-   - `NEXTAUTH_URL`: Your app URL (http://localhost:3000 for dev)
-   - `ZEGOCLOUD_APPID`: From ZegoCloud console
-   - `ZEGOCLOUD_SERVERSECRET`: From ZegoCloud console
-   - `CLOUDINARY_URL`: From Cloudinary dashboard
-   - `GROQ_API`: From Groq console (https://console.groq.com)
-
-3. **Set up the database**
-   ```bash
-   npm run prisma:generate
-   ```
-
-4. **Seed admin account**
-
-   Start the dev server first, then visit:
-   ```
-   http://localhost:3000/api/admin/seed
-   ```
-
-   Default admin credentials:
-   - Email: admin@gmail.com
-   - Password: 123456
-
-5. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-   Open [http://localhost:3000](http://localhost:3000)
-
-## Scripts
-
-- `npm run dev` - Start the development server
-- `npm run build` - Build for production
-- `npm run start` - Run the production server
-- `npm run lint` - Lint the project
-- `npm run prisma:generate` - Generate Prisma client
-- `npm run prisma:studio` - Open Prisma Studio
 
 ## Project Structure
 
 ```
 app/                Next.js App Router pages and routes
 app/api/            API routes (auth, sessions, exercises, uploads)
-app/doctor/         Doctor experience (appointments, exercises, reviews, slots)
-app/patient/        Patient experience (appointments, doctors, exercises, progress)
-app/meet/           Real-time meeting rooms
+app/doctor/         Doctor portal (appointments, exercises, review, settings)
+app/patient/        Patient portal (appointments, doctors, exercise, progress)
+app/meet/           Video meeting rooms
 prisma/             Prisma schema
-src/components/     Shared components
-src/lib/            Auth, Prisma, utilities
+src/components/     Shared components and UI
+src/lib/            Auth, Prisma, and utilities
 ```
 
-## User Roles & Workflows
+## User Journeys
 
 ### Patient
-1. Sign up and create account
-2. Browse available doctors
-3. Book appointment slots
-4. Join video consultations
-5. Receive exercise prescriptions
-6. Perform exercises with AI pose detection
-7. View progress analytics
+1. Sign up and create account.
+2. Browse doctors and book a slot.
+3. Join video consultation at the scheduled time.
+4. Receive prescribed exercises.
+5. Perform exercises with AI guidance.
+6. Review progress and reports.
 
 ### Doctor
-1. Login with admin-created credentials
-2. Set available time slots
-3. Review and approve appointment requests
-4. Join telehealth sessions
-5. Prescribe exercises from database
-6. Review patient exercise recordings with AI analysis
+1. Login with admin-created credentials.
+2. Create availability slots.
+3. Approve appointment requests.
+4. Join telehealth sessions.
+5. Prescribe exercises and review recordings.
+6. Read AI clinical summaries.
 
 ### Admin
-1. Login to admin panel
-2. Create doctor accounts
-3. Manage users (block/unblock)
-4. Monitor platform activity
+1. Login to admin panel.
+2. Create doctors and manage users.
+3. Monitor overall platform activity.
 
-## Configuration Guides
+## Setup
 
-### MongoDB Setup
-1. Create account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. Create cluster and database
-3. Get connection string and add to `MONGO_URL`
+### Prerequisites
 
-### ZegoCloud Setup
-1. Create account at [ZegoCloud](https://www.zegocloud.com/)
-2. Create project in console
-3. Copy AppID and ServerSecret to `.env`
+- Node.js 18+
+- MongoDB (Atlas or local)
+- ZegoCloud account
+- Cloudinary account
+- Groq API key
 
-### Cloudinary Setup
-1. Create account at [Cloudinary](https://cloudinary.com/)
-2. Go to Dashboard
-3. Copy `CLOUDINARY_URL` from API credentials
+### Quick Start
 
-### Groq Setup
-1. Create account at [Groq Console](https://console.groq.com)
-2. Generate API key
-3. Add to `GROQ_API` in `.env`
+```bash
+cd physiocare-ai
+cp .env.example .env
+npm install
+npm run prisma:generate
+npm run dev
+```
 
-## Troubleshooting
+Seed admin account:
 
-### Database connection fails
-- Verify `MONGO_URL` is correct
-- Check MongoDB cluster is running
-- Ensure IP is whitelisted in MongoDB Atlas
+```
+http://localhost:3000/api/admin/seed
+```
 
-### Video calls don't work
-- Verify `ZEGOCLOUD_APPID` and `ZEGOCLOUD_SERVERSECRET`
-- Check browser permissions for camera/microphone
-- Test in Chrome/Edge (best compatibility)
+Default admin credentials:
+- Email: admin@gmail.com
+- Password: 123456
 
-### Exercise reports fail
-- Verify `GROQ_API` key is valid
-- Check Groq API quota/limits
-- Review console for specific error messages
+## Environment Variables
 
-### Video upload fails
-- Verify `CLOUDINARY_URL` format is correct
-- Check Cloudinary storage quota
-- Ensure video size is under 100MB
+```bash
+MONGO_URL=...
+NEXTAUTH_SECRET=...
+NEXTAUTH_URL=http://localhost:3000
+ZEGOCLOUD_APPID=...
+ZEGOCLOUD_SERVERSECRET=...
+CLOUDINARY_URL=...
+GROQ_API=...
+EXERCISEDB_API=... # optional
+```
+
+## Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Run production server
+- `npm run lint` - Lint the project
+- `npm run prisma:generate` - Generate Prisma client
+- `npm run prisma:studio` - Open Prisma Studio
+
+## API Highlights
+
+- `POST /api/auth/[...nextauth]` - Authentication
+- `POST /api/patient/signup` - Patient signup
+- `GET /api/admin/seed` - Seed admin
+- `POST /api/meetings/token` - ZegoCloud token
+- `POST /api/cloudinary/upload` - Upload recordings
+- `GET /api/exercises` - Exercise search
+
+## Security Notes
+
+- Role-based access control enforced in middleware.
+- Passwords are hashed before storage.
+- Secrets are stored only in `.env`.
+- Sensitive API routes are protected server-side.
+
+## Documentation
+
+- [GETTING_STARTED.md](GETTING_STARTED.md)
+- [SETUP_GUIDE.md](SETUP_GUIDE.md)
+- [SUMMARY.md](SUMMARY.md)
+- [IMPROVEMENTS.md](IMPROVEMENTS.md)
+- [VISUAL_IMPROVEMENTS.md](VISUAL_IMPROVEMENTS.md)
+
+## Troubleshooting (Quick)
+
+- **Database errors**: Confirm `MONGO_URL` and Atlas IP whitelist.
+- **Video issues**: Check ZegoCloud keys and browser permissions.
+- **AI report failures**: Verify `GROQ_API` and usage limits.
+- **Upload failures**: Validate `CLOUDINARY_URL` and file size limits.
 
 ## License
 
@@ -176,4 +196,4 @@ Proprietary - All rights reserved
 
 ---
 
-Built with care for modern healthcare
+Built for modern physiotherapy workflows.

@@ -42,10 +42,39 @@ export async function GET(
     });
 
     if (exerciseRecord) {
+      const romHistoryRows = await prisma.exerciseSessionRecord.findMany({
+        where: {
+          doctorId: actor.id,
+          patientId: exerciseRecord.patientId,
+          prescriptionId: exerciseRecord.prescriptionId,
+        },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          createdAt: true,
+          maxAngle: true,
+          accuracy: true,
+          repCount: true,
+        },
+        take: 30,
+      });
+
       return NextResponse.json({
         item: {
           ...exerciseRecord,
           sessionType: "exercise",
+          romHistory: romHistoryRows.map((row) => ({
+            id: row.id,
+            createdAt: row.createdAt,
+            maxAngle: Number(row.maxAngle || 0),
+            accuracy: Number(row.accuracy || 0),
+            repCount: Number(row.repCount || 0),
+          })),
+          doctorVerification: {
+            doctorId: actor.id,
+            doctorEmail: String((session?.user as any)?.email || "doctor@physiocare.local"),
+            generatedAt: new Date().toISOString(),
+          },
         },
       });
     }

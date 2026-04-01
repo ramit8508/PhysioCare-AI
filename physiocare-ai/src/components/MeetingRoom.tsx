@@ -9,10 +9,11 @@ type Props = {
   userId: string;
   userName: string;
   fullScreen?: boolean;
+  lowBandwidthMode?: boolean;
   onCallEnd?: () => void;
 };
 
-export default function MeetingRoom({ roomId, userId, userName, fullScreen, onCallEnd }: Props) {
+export default function MeetingRoom({ roomId, userId, userName, fullScreen, lowBandwidthMode, onCallEnd }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const zegoRef = useRef<ZegoUIKitPrebuilt | null>(null);
   const initRef = useRef(false);
@@ -118,6 +119,10 @@ export default function MeetingRoom({ roomId, userId, userName, fullScreen, onCa
           scenario: {
             mode: ZegoUIKitPrebuilt.OneONoneCall,
           },
+          turnOnCameraWhenJoining: !lowBandwidthMode,
+          videoResolutionDefault: lowBandwidthMode
+            ? ZegoUIKitPrebuilt.VideoResolution_180P
+            : ZegoUIKitPrebuilt.VideoResolution_360P,
           showRoomDetailsButton: true,
           showRoomTimer: true,
           showMyCameraToggleButton: true,
@@ -164,7 +169,7 @@ export default function MeetingRoom({ roomId, userId, userName, fullScreen, onCa
         // Ignore cleanup errors
       }
     };
-  }, [roomId, userId, userName, onCallEnd]);
+  }, [roomId, userId, userName, lowBandwidthMode, onCallEnd]);
 
   return (
     <div className={fullScreen ? "w-full h-full flex flex-col bg-slate-900" : "flex flex-col gap-4 bg-linear-to-br from-slate-50 via-blue-50 to-slate-50 rounded-2xl border-2 border-slate-200 overflow-hidden shadow-2xl"}>
@@ -227,9 +232,10 @@ export default function MeetingRoom({ roomId, userId, userName, fullScreen, onCa
               </div>
               <button
                 onClick={() => {
-                  const opened = window.open(`/meet/${roomId}`, "_blank");
+                  const targetUrl = lowBandwidthMode ? `/meet/${roomId}?lowBandwidth=1` : `/meet/${roomId}`;
+                  const opened = window.open(targetUrl, "_blank");
                   if (!opened) {
-                    window.location.href = `/meet/${roomId}`;
+                    window.location.href = targetUrl;
                   }
                 }}
                 className="flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-xl"

@@ -48,8 +48,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json()) as { slotId?: string };
+  const body = (await request.json()) as { slotId?: string; followUpPrescriptionId?: string };
   const slotId = body.slotId || "";
+  const followUpPrescriptionId = String(body.followUpPrescriptionId || "").trim();
 
   if (!slotId) {
     return NextResponse.json({ error: "slotId is required" }, { status: 400 });
@@ -67,6 +68,38 @@ export async function POST(request: Request) {
 
   if (slot.startAt < new Date()) {
     return NextResponse.json({ error: "Cannot book past slot" }, { status: 400 });
+  }
+
+  if (followUpPrescriptionId) {
+    const prescription = await prisma.exercisePrescription.findFirst({
+      where: {
+        id: followUpPrescriptionId,
+        patientId: actor.id,
+      },
+      include: {
+        exercises: { select: { id: true } },
+      },
+    });
+
+    if (!prescription) {
+      return NextResponse.json({ error: "Follow-up prescription not found" }, { status: 404 });
+    }
+
+    if (String(prescription.doctorId) !== String(slot.doctorId)) {
+      return NextResponse.json({ error: "Follow-up must be booked with the same doctor" }, { status: 400 });
+    }
+
+    const sessionCount = await prisma.exerciseSessionRecord.count({
+      where: {
+        patientId: actor.id,
+        prescriptionId: prescription.id,
+      },
+    });
+
+    const totalExercises = Array.isArray(prescription.exercises) ? prescription.exercises.length : 0;
+    if (totalExercises === 0 || sessionCount < totalExercises) {
+      return NextResponse.json({ error: "Complete all prescribed exercises before requesting follow-up" }, { status: 409 });
+    }
   }
 
   const created = await prisma.appointment.create({

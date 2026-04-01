@@ -44,6 +44,8 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     items: appointments.map((appointment) => ({
+      prescriptionTimelineDays: prescriptionMap.get(appointment.id)?.timelineDays || null,
+      prescriptionActiveUntil: prescriptionMap.get(appointment.id)?.activeUntil || null,
       id: appointment.id,
       patientId: appointment.patient.id,
       patientEmail: appointment.patient.email,

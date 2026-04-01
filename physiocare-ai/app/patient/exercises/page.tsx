@@ -130,10 +130,52 @@ export default function PatientExercisesPage() {
                       <h3 className="text-lg font-semibold text-foreground">Recovery Plan</h3>
                     </div>
                     <p className="text-xs text-muted-foreground">Prescribed by {item.doctor?.email?.split("@")[0] || "Doctor"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Timeline: {item.timelineDays || 7} day(s) · Day {item.timelineDayNumber || 1}/{item.timelineDays || 7}
+                    </p>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-success/10 text-success">
-                    <CheckCircle2 size={12} /> Active
-                  </span>
+                  {item.isActive ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-success/10 text-success">
+                      <CheckCircle2 size={12} /> Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-destructive/10 text-destructive">
+                      Expired
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3 rounded-xl border border-white/6 bg-secondary/20 p-3 space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    {item.isActive
+                      ? `Active until ${new Date(item.activeUntil).toLocaleDateString()} · ${item.daysRemaining} day(s) remaining`
+                      : `Timeline ended on ${new Date(item.activeUntil).toLocaleDateString()}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Timeline sessions: {item.timelineSessionCount || 0} · Active days completed: {item.timelineCompletedDays || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Exercise completion: {item.completedExercisesCount || 0}/{item.totalExercises || 0}
+                  </p>
+                  <div className="h-2 rounded-full bg-secondary/60 overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full"
+                      style={{ width: `${Number(item.timelineProgressPercent || 0)}%` }}
+                    />
+                  </div>
+
+                  {item.followUpEligible ? (
+                    <a
+                      href={`/patient/appointments?doctorId=${encodeURIComponent(String(item.followUpDoctorId || ""))}&followUpPrescriptionId=${encodeURIComponent(String(item.id || ""))}`}
+                      className="inline-flex mt-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
+                    >
+                      Request Follow-up Appointment (Same Doctor)
+                    </a>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Complete all exercises in this plan to request a follow-up appointment with this doctor.
+                    </p>
+                  )}
                 </div>
 
                 <div className="mt-4 space-y-3">
@@ -223,12 +265,18 @@ export default function PatientExercisesPage() {
                       })()}
 
                       <div className="mt-2">
-                        <a
-                          href={`/patient/exercise?prescriptionId=${item.id}&exerciseId=${exercise.id}`}
-                          className="inline-flex px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
-                        >
-                          Start Exercise
-                        </a>
+                        {item.isActive ? (
+                          <a
+                            href={`/patient/exercise?prescriptionId=${item.id}&exerciseId=${exercise.id}`}
+                            className="inline-flex px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
+                          >
+                            Start Exercise
+                          </a>
+                        ) : (
+                          <span className="inline-flex px-3 py-1.5 rounded-lg bg-secondary text-muted-foreground text-xs font-semibold border border-white/8">
+                            Timeline Ended
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}

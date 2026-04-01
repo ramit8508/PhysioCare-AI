@@ -161,6 +161,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Prescription not found" }, { status: 404 });
   }
 
+  const timelineDays = Math.min(365, Math.max(1, Number((prescription as any).timelineDays || 7)));
+  const activeUntil = (prescription as any).activeUntil
+    ? new Date((prescription as any).activeUntil)
+    : new Date(prescription.createdAt.getTime() + timelineDays * 24 * 60 * 60 * 1000);
+
+  if (Date.now() > activeUntil.getTime()) {
+    return NextResponse.json({ error: "Prescription timeline has ended" }, { status: 409 });
+  }
+
   const repCount = Number(body.repCount || 0);
   const accuracy = Number(body.accuracy || 0);
   const maxAngle = Number(body.maxAngle || 0);

@@ -75,11 +75,11 @@ export function useAppointments(selectedDoctorId?: string) {
   });
 
   const bookMutation = useMutation({
-    mutationFn: async (slotId: string) => {
+    mutationFn: async (payload: { slotId: string; followUpPrescriptionId?: string }) => {
       const response = await fetch("/api/patient/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getActorHeaders("PATIENT") },
-        body: JSON.stringify({ slotId }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -120,7 +120,7 @@ export function useAppointments(selectedDoctorId?: string) {
     isLoading: appointmentsQuery.isLoading || doctorsQuery.isLoading,
     isBooking: bookMutation.isPending,
     bookingError: bookMutation.error instanceof Error ? bookMutation.error.message : null,
-    bookSlot: (slotId: string) => bookMutation.mutateAsync(slotId),
+    bookSlot: (slotId: string, followUpPrescriptionId?: string) => bookMutation.mutateAsync({ slotId, followUpPrescriptionId }),
     refetchAll: async () => {
       await Promise.all([appointmentsQuery.refetch(), doctorsQuery.refetch(), slotsQuery.refetch()]);
     },

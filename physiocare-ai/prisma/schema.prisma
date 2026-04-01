@@ -25,6 +25,12 @@ enum AppointmentStatus {
   CANCELED
 }
 
+enum AppointmentRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
 model User {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId
   email         String         @unique
@@ -44,6 +50,8 @@ model User {
   slotsAsDoctor           DoctorSlot[]           @relation("DoctorSlots")
   appointmentsAsDoctor    Appointment[]          @relation("DoctorAppointments")
   appointmentsAsPatient   Appointment[]          @relation("PatientAppointments")
+  appointmentRequestsAsDoctor AppointmentRequest[] @relation("DoctorAppointmentRequests")
+  appointmentRequestsAsPatient AppointmentRequest[] @relation("PatientAppointmentRequests")
 }
 
 model DoctorProfile {
@@ -73,6 +81,8 @@ model ExercisePrescription {
   doctorId      String   @db.ObjectId
   patientId     String   @db.ObjectId
   appointmentId String?  @db.ObjectId
+  timelineDays  Int      @default(7)
+  activeUntil   DateTime?
   exerciseId    String?
   name          String?
   gifUrl        String?
@@ -142,6 +152,22 @@ model Appointment {
   patient  User       @relation("PatientAppointments", fields: [patientId], references: [id])
   slot     DoctorSlot @relation(fields: [slotId], references: [id])
   telehealthCall TelehealthCallRecord?
+}
+
+model AppointmentRequest {
+  id          String                   @id @default(auto()) @map("_id") @db.ObjectId
+  doctorId    String                   @db.ObjectId
+  patientId   String                   @db.ObjectId
+  summary     String
+  preferredAt DateTime?
+  status      AppointmentRequestStatus @default(PENDING)
+  roomId      String?
+  meetingUrl  String?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  doctor      User @relation("DoctorAppointmentRequests", fields: [doctorId], references: [id])
+  patient     User @relation("PatientAppointmentRequests", fields: [patientId], references: [id])
 }
 
 model TelehealthCallRecord {

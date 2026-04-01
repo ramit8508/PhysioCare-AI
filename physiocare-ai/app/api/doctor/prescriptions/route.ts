@@ -47,6 +47,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     appointmentId?: string;
     patientId?: string;
+    timelineDays?: number;
     exerciseId?: string;
     name?: string;
     gifUrl?: string;
@@ -63,6 +64,8 @@ export async function POST(request: Request) {
   const appointmentId = body.appointmentId || "";
   const patientId = body.patientId || "";
   const exercises = Array.isArray(body.exercises) ? body.exercises : [];
+  const timelineDays = Math.min(365, Math.max(1, Number(body.timelineDays || 7)));
+  const activeUntil = new Date(Date.now() + timelineDays * 24 * 60 * 60 * 1000);
 
   if (!appointmentId || !patientId || exercises.length === 0) {
     return NextResponse.json({ error: "appointmentId, patientId and exercises are required" }, { status: 400 });
@@ -92,28 +95,32 @@ export async function POST(request: Request) {
 
   const firstMatch = enrichedExercises.find((item) => item.exerciseId || item.demoUrl);
 
-  const prescription = await prisma.exercisePrescription.create({
-    data: {
-      doctorId: actor.id,
-      patientId,
-      appointmentId,
-      exerciseId: firstMatch?.exerciseId || body.exerciseId || null,
-      name: body.name || null,
-      gifUrl: firstMatch?.demoUrl || body.gifUrl || null,
-      bodyPart: body.bodyPart || null,
-      target: body.target || null,
-      exercises: {
-        create: enrichedExercises.map((exercise) => {
-          const demoText = exercise.demoUrl ? `\nDemo: ${exercise.demoUrl}` : "";
-          return {
-            name: exercise.name,
-            reps: exercise.reps,
-            sets: exercise.sets,
-            notes: `${exercise.notes || ""}${demoText}`.trim() || null,
-          };
-        }),
-      },
+  const prescriptionData: any = {
+    doctorId: actor.id,
+    patientId,
+    appointmentId,
+    timelineDays,
+    activeUntil,
+    exerciseId: firstMatch?.exerciseId || body.exerciseId || null,
+    name: body.name || null,
+    gifUrl: firstMatch?.demoUrl || body.gifUrl || null,
+    bodyPart: body.bodyPart || null,
+    target: body.target || null,
+    exercises: {
+      create: enrichedExercises.map((exercise) => {
+        const demoText = exercise.demoUrl ? `\nDemo: ${exercise.demoUrl}` : "";
+        return {
+          name: exercise.name,
+          reps: exercise.reps,
+          sets: exercise.sets,
+          notes: `${exercise.notes || ""}${demoText}`.trim() || null,
+        };
+      }),
     },
+  };
+
+  const prescription = await prisma.exercisePrescription.create({
+    data: prescriptionData,
     include: { exercises: true },
   });
 

@@ -13,6 +13,14 @@ type SessionSummary = {
 	reportText: string;
 };
 
+type RecoveryPrediction = {
+	targetMobilityPercent: number;
+	estimatedDaysToTarget: number;
+	onTrack: boolean;
+	confidence: "low" | "medium" | "high";
+	reasoning: string;
+};
+
 function resolveDemoPatient(email: string) {
 	const normalizedEmail = String(email || "").trim().toLowerCase();
 	const configured = String(process.env.DEMO_PATIENT_EMAILS || "")
@@ -109,6 +117,157 @@ async function buildCombinedGroqReport(sessions: SessionSummary[]) {
 	}
 }
 
+function linearRegressionTrend(values: number[]) {
+	if (values.length <= 1) {
+		return 0;
+	}
+
+	const n = values.length;
+	const meanX = (n - 1) / 2;
+	const meanY = values.reduce((sum, value) => sum + value, 0) / n;
+
+	let numerator = 0;
+	let denominator = 0;
+	for (let i = 0; i < n; i += 1) {
+		const x = i - meanX;
+		const y = values[i] - meanY;
+		numerator += x * y;
+		denominator += x * x;
+	}
+
+	return denominator === 0 ? 0 : numerator / denominator;
+}
+
+function buildFallbackPrediction(sessions: SessionSummary[]): RecoveryPrediction {
+	const recent = sessions.slice(-14);
+	const avgAccuracy = recent.reduce((sum, item) => sum + item.accuracy, 0) / Math.max(1, recent.length);
+	const trendPerSession = linearRegressionTrend(recent.map((item) => item.accuracy));
+
+	const sessionDays = new Set(
+		recent.map((item) => {
+			const day = new Date(item.createdAt);
+			day.setHours(0, 0, 0, 0);
+			return day.getTime();
+		}),
+	);
+
+	const firstTime = recent[0]?.createdAt?.getTime() || Date.now();
+	const lastTime = recent[recent.length - 1]?.createdAt?.getTime() || Date.now();
+	const periodDays = Math.max(1, Math.ceil((lastTime - firstTime) / (24 * 60 * 60 * 1000)) + 1);
+	const sessionsPerDay = recent.length / periodDays;
+	const projectedGainPerDay = Math.max(0.02, trendPerSession * Math.max(0.2, sessionsPerDay));
+
+	const targetMobilityPercent = 90;
+	const gap = Math.max(0, targetMobilityPercent - avgAccuracy);
+	const estimatedDaysToTarget = Math.max(1, Math.min(120, Math.round(gap / projectedGainPerDay)));
+
+	const confidence: RecoveryPrediction["confidence"] =
+		recent.length >= 18 ? "high" : recent.length >= 8 ? "medium" : "low";
+
+	return {
+		targetMobilityPercent,
+		estimatedDaysToTarget,
+		onTrack: avgAccuracy >= targetMobilityPercent || estimatedDaysToTarget <= 21,
+		confidence,
+		reasoning: `Prediction based on ${recent.length} sessions, current average accuracy ${avgAccuracy.toFixed(
+			1,
+		)}%, and recent consistency over ${sessionDays.size} active day(s).`,
+	};
+}
+
+function extractPredictionFromText(text: string) {
+	const raw = String(text || "");
+	if (!raw.trim()) {
+		return null;
+	}
+
+	const start = raw.indexOf("{");
+	const end = raw.lastIndexOf("}");
+	if (start < 0 || end <= start) {
+		return null;
+	}
+
+	try {
+		const parsed = JSON.parse(raw.slice(start, end + 1)) as any;
+		const target = Number(parsed?.targetMobilityPercent);
+		const days = Number(parsed?.estimatedDaysToTarget);
+		const onTrack = Boolean(parsed?.onTrack);
+		const confidence = String(parsed?.confidence || "").toLowerCase();
+		const reasoning = String(parsed?.reasoning || "").trim();
+
+		if (!Number.isFinite(target) || !Number.isFinite(days) || !reasoning) {
+			return null;
+		}
+
+		return {
+			targetMobilityPercent: Math.max(70, Math.min(100, Math.round(target))),
+			estimatedDaysToTarget: Math.max(1, Math.min(180, Math.round(days))),
+			onTrack,
+			confidence:
+				confidence === "high" || confidence === "medium" || confidence === "low"
+					? (confidence as "low" | "medium" | "high")
+					: "medium",
+			reasoning,
+		} as RecoveryPrediction;
+	} catch {
+		return null;
+	}
+}
+
+async function buildGroqRecoveryPrediction(sessions: SessionSummary[]) {
+	const fallback = buildFallbackPrediction(sessions);
+	const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_API;
+
+	if (!groqKey) {
+		return fallback;
+	}
+
+	try {
+		const recent = sessions.slice(-30).map((session) => ({
+			date: session.createdAt.toISOString(),
+			repCount: session.repCount,
+			accuracy: session.accuracy,
+			maxAngle: session.maxAngle,
+		}));
+
+		const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${groqKey}`,
+			},
+			body: JSON.stringify({
+				model: "llama-3.3-70b-versatile",
+				temperature: 0.2,
+				messages: [
+					{
+						role: "system",
+						content:
+							"You are a rehab progress forecasting assistant. Output strict JSON only with keys: targetMobilityPercent (number), estimatedDaysToTarget (number), onTrack (boolean), confidence (low|medium|high), reasoning (string). Use the provided exercise history and be conservative. Never diagnose.",
+					},
+					{
+						role: "user",
+						content: `Predict recovery timeline from this history. Focus on likely days to reach around 90% mobility quality based on consistency and accuracy trend.\n${JSON.stringify(
+							recent,
+						)}`,
+					},
+				],
+			}),
+		});
+
+		if (!response.ok) {
+			return fallback;
+		}
+
+		const data = (await response.json()) as any;
+		const content = String(data?.choices?.[0]?.message?.content || "");
+		const parsed = extractPredictionFromText(content);
+		return parsed || fallback;
+	} catch {
+		return fallback;
+	}
+}
+
 export async function GET(request: Request) {
 	const session = await getSession();
 	const user = session?.user as any;
@@ -158,6 +317,13 @@ export async function GET(request: Request) {
 				"- Add one mobility-focused day for shoulder and wrist range.",
 				"- Target average session accuracy above 92%.",
 			].join("\n"),
+			prediction: {
+				targetMobilityPercent: 90,
+				estimatedDaysToTarget: 14,
+				onTrack: true,
+				confidence: "high",
+				reasoning: "Current consistency and upward accuracy trend indicate likely progress to 90% mobility quality in about two weeks.",
+			},
 		});
 	}
 
@@ -187,6 +353,13 @@ export async function GET(request: Request) {
 			},
 			chart: [],
 			combinedReport: "No session data yet. Complete an exercise to generate your AI performance report.",
+			prediction: {
+				targetMobilityPercent: 90,
+				estimatedDaysToTarget: 0,
+				onTrack: false,
+				confidence: "low",
+				reasoning: "Not enough session data yet. Complete a few sessions to enable prediction.",
+			},
 		});
 	}
 
@@ -196,6 +369,7 @@ export async function GET(request: Request) {
 	const totalMinutesEstimate = Math.round((sessions.length * 3.5 * 10) / 10);
 
 	const combinedReport = await buildCombinedGroqReport(sessions);
+	const prediction = await buildGroqRecoveryPrediction(sessions);
 
 	const chart = sessions.slice(-7).map((item) => ({
 		day: new Date(item.createdAt).toLocaleDateString("en-US", { weekday: "short" }),
@@ -212,5 +386,6 @@ export async function GET(request: Request) {
 		},
 		chart,
 		combinedReport,
+		prediction,
 	});
 }
